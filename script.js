@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  window.effectManager = new EffectManager(".game-container");
   new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
 });
 
@@ -547,6 +548,12 @@ class HTMLActuator {
 
     // Add the inner part to the wrapper
     this.tileContainer.appendChild(wrapper);
+
+    if (tile.mergedFrom && window.effectManager) {
+      window.requestAnimationFrame(() => {
+        window.effectManager.explode(wrapper, tile.value);
+      });
+    }
   }
 
   applyClasses(element, classes) {
