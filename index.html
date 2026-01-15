@@ -5,8 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Photo 2048</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8f7a66">
+    <link rel="icon" href="assets/classic/2048.jpg" sizes="192x192">
+    <link rel="apple-touch-icon" href="assets/classic/2048.jpg">
 </head>
 <body>
+    <div id="theme-selector" class="theme-selector">
+        <h1>Select Theme</h1>
+        <div class="theme-options">
+            <button class="theme-btn" data-theme="classic">Classic</button>
+            <button class="theme-btn" data-theme="nature">Nature</button>
+        </div>
+    </div>
+
+    <div id="leaderboard" class="overlay hidden">
+        <div class="overlay-content">
+            <h1>High Scores</h1>
+            <div id="leaderboard-entry" class="leaderboard-entry hidden">
+                <p>New high score! Enter your name:</p>
+                <div class="leaderboard-form">
+                    <input id="player-name" type="text" maxlength="20" autocomplete="name" placeholder="Player name">
+                    <button id="save-score">Save</button>
+                </div>
+            </div>
+            <ul id="high-score-list">
+                <!-- Scores will be injected here -->
+            </ul>
+            <div class="overlay-actions">
+                <button id="clear-leaderboard" class="secondary">Clear</button>
+                <button id="close-leaderboard">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <h1>Photo 2048</h1>
@@ -14,7 +46,10 @@
                 <div class="score-container">0</div>
                 <div class="best-container">0</div>
             </div>
-            <button class="restart-button">New Game</button>
+            <div class="header-buttons">
+                <button id="show-leaderboard">Scores</button>
+                <button class="restart-button">New Game</button>
+            </div>
         </header>
         
         <div class="game-container">

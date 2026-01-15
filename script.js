@@ -1,32 +1,370 @@
+let selectedTheme = 'classic';
+let gameInstance = null;
+const CustomImages = {};
+let customImageAvailability = {};
+let themeLoadToken = 0;
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+const LEADERBOARD_KEY = "photo2048HighScores";
+const PLAYER_NAME_KEY = "photo2048PlayerName";
+const MAX_LEADERBOARD_ENTRIES = 10;
+let pendingEntry = null;
+let leaderboardElements = null;
+let boardRefreshScheduled = false;
+
+function scheduleBoardRefresh() {
+  if (boardRefreshScheduled) return;
+  boardRefreshScheduled = true;
+  window.requestAnimationFrame(() => {
+    boardRefreshScheduled = false;
+    if (gameInstance) {
+      gameInstance.actuate();
+    }
+  });
+}
+
+function loadLeaderboard() {
+  try {
+    const raw = window.localStorage.getItem(LEADERBOARD_KEY);
+    const data = raw ? JSON.parse(raw) : [];
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveLeaderboard(entries) {
+  try {
+    window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(entries));
+  } catch (error) {
+    // Ignore storage errors (private mode or quota).
+  }
+}
+
+function sortLeaderboard(entries) {
+  return entries.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return String(a.date || "").localeCompare(String(b.date || ""));
+  });
+}
+
+function addLeaderboardEntry(entry) {
+  const entries = loadLeaderboard();
+  entries.push(entry);
+  sortLeaderboard(entries);
+  const trimmed = entries.slice(0, MAX_LEADERBOARD_ENTRIES);
+  saveLeaderboard(trimmed);
+  return trimmed;
+}
+
+function getStoredPlayerName() {
+  try {
+    return window.localStorage.getItem(PLAYER_NAME_KEY) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString();
+}
+
+function getMaxTileValue(grid) {
+  let maxValue = 0;
+  grid.eachCell((x, y, tile) => {
+    if (tile && tile.value > maxValue) {
+      maxValue = tile.value;
+    }
+  });
+  return maxValue;
+}
+
+function renderLeaderboard() {
+  if (!leaderboardElements) return;
+  const list = leaderboardElements.list;
+  const entries = loadLeaderboard();
+  sortLeaderboard(entries);
+
+  list.textContent = "";
+
+  if (!entries.length) {
+    const empty = document.createElement("li");
+    empty.className = "score-empty";
+    empty.textContent = "No scores yet. Play a game to add one.";
+    list.appendChild(empty);
+    return;
+  }
+
+  entries.forEach((entry, index) => {
+    const row = document.createElement("li");
+    row.className = "score-row";
+
+    const rank = document.createElement("div");
+    rank.className = "score-rank";
+    rank.textContent = String(index + 1);
+
+    const main = document.createElement("div");
+    main.className = "score-main";
+
+    const name = document.createElement("div");
+    name.className = "score-name";
+    name.textContent = entry.name || "Player";
+
+    const meta = document.createElement("div");
+    meta.className = "score-meta";
+
+    const metaParts = [];
+    if (entry.maxTile) metaParts.push(`Tile ${entry.maxTile}`);
+    if (entry.theme) metaParts.push(entry.theme);
+    if (entry.date) {
+      const formatted = formatDate(entry.date);
+      if (formatted) metaParts.push(formatted);
+    }
+    meta.textContent = metaParts.join(" - ");
+
+    main.appendChild(name);
+    if (meta.textContent) {
+      main.appendChild(meta);
+    }
+
+    const value = document.createElement("div");
+    value.className = "score-value";
+    const scoreNumber = Number(entry.score) || 0;
+    value.textContent = scoreNumber.toLocaleString();
+
+    row.appendChild(rank);
+    row.appendChild(main);
+    row.appendChild(value);
+    list.appendChild(row);
+  });
+}
+
+function commitPendingEntry(name) {
+  if (!pendingEntry) return;
+  const cleanName = String(name || "").trim();
+  const finalName = cleanName ? cleanName.slice(0, 20) : "Player";
+
+  try {
+    window.localStorage.setItem(PLAYER_NAME_KEY, finalName);
+  } catch (error) {
+    // Ignore storage errors.
+  }
+
+  addLeaderboardEntry({
+    name: finalName,
+    score: pendingEntry.score,
+    maxTile: pendingEntry.maxTile,
+    theme: pendingEntry.theme,
+    date: pendingEntry.date,
+  });
+
+  pendingEntry = null;
+
+  if (leaderboardElements) {
+    leaderboardElements.entry.classList.add("hidden");
+    renderLeaderboard();
+  }
+}
+
+function queueScoreEntry(score, grid) {
+  if (!score || score <= 0) return;
+
+  const entries = loadLeaderboard();
+  sortLeaderboard(entries);
+
+  if (entries.length >= MAX_LEADERBOARD_ENTRIES) {
+    const lowestScore = Number(entries[entries.length - 1].score) || 0;
+    if (score <= lowestScore) return;
+  }
+
+  pendingEntry = {
+    score: score,
+    maxTile: getMaxTileValue(grid),
+    theme: selectedTheme,
+    date: new Date().toISOString(),
+  };
+
+  if (!leaderboardElements) {
+    commitPendingEntry("Player");
+    return;
+  }
+
+  const { overlay, entry, input } = leaderboardElements;
+  entry.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+  renderLeaderboard();
+
+  if (input && !input.value) {
+    input.value = getStoredPlayerName();
+  }
+  if (input) {
+    input.focus();
+  }
+}
+
+function setupLeaderboardUI() {
+  const overlay = document.getElementById("leaderboard");
+  if (!overlay) return;
+
+  const list = document.getElementById("high-score-list");
+  const entry = document.getElementById("leaderboard-entry");
+  const input = document.getElementById("player-name");
+  const saveButton = document.getElementById("save-score");
+  const showButton = document.getElementById("show-leaderboard");
+  const closeButton = document.getElementById("close-leaderboard");
+  const clearButton = document.getElementById("clear-leaderboard");
+
+  leaderboardElements = {
+    overlay,
+    list,
+    entry,
+    input,
+    saveButton,
+    showButton,
+    closeButton,
+    clearButton,
+  };
+
+  if (input) {
+    const storedName = getStoredPlayerName();
+    if (storedName) {
+      input.value = storedName;
+    }
+  }
+
+  if (showButton) {
+    showButton.addEventListener("click", () => {
+      entry.classList.add("hidden");
+      overlay.classList.remove("hidden");
+      renderLeaderboard();
+    });
+  }
+
+  if (closeButton) {
+    closeButton.addEventListener("click", () => {
+      if (pendingEntry) {
+        commitPendingEntry(input ? input.value : "");
+      }
+      overlay.classList.add("hidden");
+    });
+  }
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) {
+      if (pendingEntry) {
+        commitPendingEntry(input ? input.value : "");
+      }
+      overlay.classList.add("hidden");
+    }
+  });
+
+  if (saveButton) {
+    saveButton.addEventListener("click", () => {
+      commitPendingEntry(input ? input.value : "");
+      overlay.classList.remove("hidden");
+    });
+  }
+
+  if (input) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        commitPendingEntry(input.value);
+        overlay.classList.remove("hidden");
+      }
+    });
+  }
+
+  if (clearButton) {
+    clearButton.addEventListener("click", () => {
+      if (!window.confirm("Clear all high scores?")) {
+        return;
+      }
+      saveLeaderboard([]);
+      renderLeaderboard();
+    });
+  }
+
+  renderLeaderboard();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  window.effectManager = new EffectManager(".game-container");
-  new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
+  setupLeaderboardUI();
+
+  // Theme Selection Logic
+  const themeSelector = document.getElementById('theme-selector');
+  const buttons = document.querySelectorAll('.theme-btn');
+  
+  if (themeSelector) {
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedTheme = btn.dataset.theme;
+          applyTheme(selectedTheme);
+          themeSelector.classList.add('hidden');
+          startGame();
+        });
+      });
+  } else {
+      // Fallback if no selector (e.g. old HTML)
+      applyTheme('classic');
+      startGame();
+  }
 });
 
-// Configuration for custom images
-// You can replace these URLs with local paths like 'assets/2.png'
-const CustomImages = {
-  2: "assets/2.jpg",
-  4: "assets/4.jpg",
-  8: "assets/8.jpg",
-  16: "assets/16.jpg",
-  32: "assets/32.jpg",
-  64: "assets/64.jpg",
-  128: "assets/128.jpg",
-  256: "assets/256.jpg",
-  512: "assets/512.jpg",
-  1024: "assets/1024.jpg",
-  2048: "assets/2048.jpg",
-  4096: "assets/4096.jpg",
-  8192: "assets/8192.jpg",
-  16384: "assets/16384.jpg",
-  32768: "assets/32768.jpg",
-  65536: "assets/65536.jpg",
-  131072: "assets/131072.jpg",
-  262144: "assets/262144.jpg",
-  524288: "assets/524288.jpg",
-  1048576: "assets/1048576.jpg",
-};
+function applyTheme(theme) {
+  themeLoadToken += 1;
+  const token = themeLoadToken;
+  customImageAvailability = {};
+  document.body.className = ''; // Reset classes
+  if (theme !== 'classic') {
+    document.body.classList.add(theme);
+  }
+  
+  // Update CustomImages paths
+  const values = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576];
+  values.forEach(val => {
+      CustomImages[val] = `assets/${theme}/${val}.jpg`;
+      customImageAvailability[val] = false;
+      const img = new Image();
+      img.onload = () => {
+        if (token !== themeLoadToken) return;
+        customImageAvailability[val] = true;
+        scheduleBoardRefresh();
+      };
+      img.onerror = () => {
+        if (token !== themeLoadToken) return;
+        customImageAvailability[val] = false;
+      };
+      img.src = CustomImages[val];
+  });
+}
+
+function startGame() {
+  if (!window.effectManager) {
+    window.effectManager = new EffectManager(".game-container");
+  } else {
+    window.effectManager.resize();
+  }
+  if (gameInstance) {
+    gameInstance.reset();
+  } else {
+    gameInstance = new GameManager(4, KeyboardInputManager, HTMLActuator, LocalStorageManager);
+  }
+}
+
+function showThemeSelector() {
+  const themeSelector = document.getElementById('theme-selector');
+  if (themeSelector) {
+    themeSelector.classList.remove('hidden');
+  }
+}
 
 class GameManager {
   constructor(size, InputManager, Actuator, StorageManager) {
@@ -34,6 +372,7 @@ class GameManager {
     this.inputManager = new InputManager();
     this.storageManager = new StorageManager();
     this.actuator = new Actuator();
+    this.resultRecorded = false;
 
     this.startTiles = 2;
 
@@ -45,6 +384,10 @@ class GameManager {
   }
 
   restart() {
+    showThemeSelector();
+  }
+  
+  reset() {
     this.storageManager.clearGameState();
     this.actuator.continueGame(); // Clear the game won/lost message
     this.setup();
@@ -70,12 +413,14 @@ class GameManager {
       this.over = previousState.over;
       this.won = previousState.won;
       this.keepPlaying = previousState.keepPlaying;
+      this.resultRecorded = !!previousState.resultRecorded;
     } else {
       this.grid = new Grid(this.size);
       this.score = 0;
       this.over = false;
       this.won = false;
       this.keepPlaying = false;
+      this.resultRecorded = false;
 
       // Add the initial tiles
       this.addStartTiles();
@@ -104,6 +449,13 @@ class GameManager {
 
   // Sends the updated grid to the actuator
   actuate() {
+    const shouldRecordResult =
+      !this.resultRecorded && (this.over || (this.won && !this.keepPlaying));
+
+    if (shouldRecordResult) {
+      this.resultRecorded = true;
+    }
+
     if (this.storageManager.getBestScore() < this.score) {
       this.storageManager.setBestScore(this.score);
     }
@@ -122,6 +474,10 @@ class GameManager {
       bestScore: this.storageManager.getBestScore(),
       terminated: this.isGameTerminated(),
     });
+
+    if (shouldRecordResult) {
+      queueScoreEntry(this.score, this.grid);
+    }
   }
 
   // Represent the current game as an object
@@ -132,6 +488,7 @@ class GameManager {
       over: this.over,
       won: this.won,
       keepPlaying: this.keepPlaying,
+      resultRecorded: this.resultRecorded,
     };
   }
 
@@ -508,10 +865,10 @@ class HTMLActuator {
     inner.textContent = tile.value; 
     
     // Set custom background image if available
-    if (CustomImages[tile.value]) {
-        inner.style.backgroundImage = `url('${CustomImages[tile.value]}')`;
-        inner.classList.add("has-image");
-        inner.textContent = ""; // Clear text if image is used
+    if (CustomImages[tile.value] && customImageAvailability[tile.value]) {
+      inner.style.backgroundImage = `url('${CustomImages[tile.value]}')`;
+      inner.classList.add("has-image");
+      inner.textContent = ""; // Clear text if image is used
     }
 
     if (tile.previousPosition) {
@@ -656,8 +1013,27 @@ class KeyboardInputManager {
       65: 3, // A
     };
 
+    function isTypingTarget(target) {
+      if (!target) return false;
+      if (target.isContentEditable) return true;
+      var tag = target.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+    }
+
+    function isOverlayActive() {
+      var leaderboard = document.getElementById("leaderboard");
+      if (leaderboard && !leaderboard.classList.contains("hidden")) return true;
+      var themeSelector = document.getElementById("theme-selector");
+      if (themeSelector && !themeSelector.classList.contains("hidden")) return true;
+      return false;
+    }
+
     // Respond to direction keys
     document.addEventListener("keydown", function (event) {
+      if (isTypingTarget(event.target) || isOverlayActive()) {
+        return;
+      }
+
       var modifiers =
         event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
       var mapped = map[event.which];

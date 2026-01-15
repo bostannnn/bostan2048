@@ -58,6 +58,10 @@ body {
   align-items: center;
 }
 
+.hidden {
+  display: none !important;
+}
+
 header {
   display: flex;
   align-items: center;
@@ -66,6 +70,18 @@ header {
   margin-bottom: 20px;
   flex-wrap: wrap; /* Allow wrapping on very small screens */
   gap: 15px; /* Add space between elements */
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.header-buttons button {
+  margin-left: 0;
 }
 
 h1 {
@@ -160,7 +176,6 @@ button {
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   white-space: nowrap;
-  margin-left: auto; /* Push to right if in flex container */
 }
 
 button:hover {
@@ -486,5 +501,228 @@ button:hover {
   display: inline-block;
 }
 
-/* We don't need a complex mobile media query anymore since we use fluid units 
-   But we can make small tweaks for very small screens if needed */
+/* Leaderboard Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 20, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.overlay-content {
+  width: min(560px, 92vw);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  color: #4e453e;
+}
+
+.overlay-content h1 {
+  color: #776e65;
+  text-shadow: none;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.leaderboard-entry {
+  background: rgba(143, 122, 102, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.leaderboard-entry p {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: #5a524b;
+}
+
+.leaderboard-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-form input {
+  flex: 1;
+  min-width: 160px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid #d9cfc6;
+  padding: 0 12px;
+  font-size: 16px;
+  background: #fff;
+  color: #4e453e;
+}
+
+.leaderboard-form button {
+  margin-left: 0;
+}
+
+#high-score-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 90px;
+  gap: 12px;
+  align-items: center;
+  background: rgba(143, 122, 102, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.score-rank {
+  font-weight: 700;
+  color: #8f7a66;
+  text-align: center;
+}
+
+.score-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.score-name {
+  font-weight: 700;
+  color: #4e453e;
+}
+
+.score-meta {
+  font-size: 12px;
+  color: #6f665f;
+}
+
+.score-value {
+  font-weight: 700;
+  text-align: right;
+  color: #4e453e;
+}
+
+.score-empty {
+  text-align: center;
+  color: #6f665f;
+  padding: 18px 0;
+}
+
+.overlay-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.overlay-actions button {
+  margin-left: 0;
+}
+
+.overlay-actions .secondary {
+  background: rgba(0, 0, 0, 0.15);
+  color: #4e453e;
+}
+
+.overlay-actions .secondary:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+@media screen and (max-width: 450px) {
+  .score-row {
+    grid-template-columns: 28px 1fr 70px;
+  }
+}
+
+/* Theme Selector */
+.theme-selector {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.theme-selector.hidden {
+    display: none;
+}
+
+.theme-selector h1 {
+  color: #776e65 !important;
+  margin-bottom: 30px;
+  text-shadow: none !important;
+}
+
+.theme-options {
+  display: flex;
+  gap: 20px;
+}
+
+.theme-btn {
+  padding: 15px 30px;
+  font-size: 24px;
+  background: #8f7a66;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin: 0; /* Reset margin from button global style */
+  height: auto;
+  line-height: normal;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+.theme-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Nature Theme */
+body.nature {
+  background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+  --text-color: #2e4a18;
+  --background-color: #e8f5e9;
+}
+
+body.nature h1 {
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+body.nature .game-container {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+body.nature .grid-cell {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+body.nature .score-container, body.nature .best-container {
+    background: rgba(255, 255, 255, 0.6);
+    color: #2e4a18;
+}
+
+body.nature .score-container:after, body.nature .best-container:after {
+    color: #3e6b23;
+}
