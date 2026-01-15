@@ -22,14 +22,17 @@ You can add new themes to the game by following these steps:
     *   ... up to `2048.jpg` (and higher if you wish).
     *   *Note: The code expects `.jpg` files by default.*
 
-### 2. Add Selection Button
-1.  Open `index.html`.
-2.  Find the `theme-selector` div.
-3.  Add a new button to the `theme-options` container:
-    ```html
-    <button class="theme-btn" data-theme="darkmode">Dark Mode</button>
+### 2. Register the Theme
+1.  Open `script.js`.
+2.  Find the `CHARACTERS` list near the top.
+3.  Add your theme to each character's `themes` array (or only to the character you want):
+    ```js
+    themes: [
+      { id: "aurora-classic", label: "Classic", themeKey: "classic" },
+      { id: "aurora-dark", label: "Dark Mode", themeKey: "darkmode" }
+    ]
     ```
-    *Ensure the `data-theme` attribute matches your folder name exactly.*
+    *The `themeKey` must match your assets folder name exactly.*
 
 ### 3. Add Theme Styles
 1.  Open `style.css`.

@@ -17,6 +17,42 @@ let pendingEntry = null;
 let leaderboardElements = null;
 let boardRefreshScheduled = false;
 
+/*
+const CHARACTER_UNLOCK_KEY = "photo2048CharacterUnlocks";
+const CHARACTERS = [
+  {
+    id: "aurora",
+    name: "Aurora",
+    tagline: "Calm and balanced.",
+    themes: [
+      { id: "aurora-classic", label: "Classic", themeKey: "classic" },
+      { id: "aurora-nature", label: "Verdant", themeKey: "nature" },
+    ],
+  },
+  {
+    id: "ember",
+    name: "Ember",
+    tagline: "Bold and bright.",
+    themes: [
+      { id: "ember-classic", label: "Classic", themeKey: "classic" },
+      { id: "ember-nature", label: "Wilds", themeKey: "nature" },
+    ],
+  },
+  {
+    id: "atlas",
+    name: "Atlas",
+    tagline: "Steady and strong.",
+    themes: [
+      { id: "atlas-classic", label: "Classic", themeKey: "classic" },
+      { id: "atlas-nature", label: "Grove", themeKey: "nature" },
+    ],
+  },
+];
+let selectedCharacterId = null;
+let selectedThemeIndex = 0;
+let themeSelectorElements = null;
+*/
+
 function scheduleBoardRefresh() {
   if (boardRefreshScheduled) return;
   boardRefreshScheduled = true;
@@ -86,6 +122,205 @@ function getMaxTileValue(grid) {
   return maxValue;
 }
 
+/*
+function loadUnlocks() {
+  try {
+    const raw = window.localStorage.getItem(CHARACTER_UNLOCK_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    return data && typeof data === "object" ? data : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveUnlocks(unlocks) {
+  try {
+    window.localStorage.setItem(CHARACTER_UNLOCK_KEY, JSON.stringify(unlocks));
+  } catch (error) {
+    // Ignore storage errors (private mode or quota).
+  }
+}
+
+function getUnlockedIndex(characterId) {
+  const unlocks = loadUnlocks();
+  const value = unlocks[characterId];
+  return Number.isInteger(value) ? value : 0;
+}
+
+function setUnlockedIndex(characterId, index) {
+  const unlocks = loadUnlocks();
+  unlocks[characterId] = index;
+  saveUnlocks(unlocks);
+}
+
+function getCharacterById(characterId) {
+  return CHARACTERS.find((character) => character.id === characterId) || null;
+}
+
+function getSelectedThemeMeta() {
+  const character = getCharacterById(selectedCharacterId);
+  if (!character) {
+    return { themeLabel: selectedTheme || "classic", characterName: "" };
+  }
+  const theme = character.themes[selectedThemeIndex];
+  return {
+    themeLabel: theme ? theme.label : selectedTheme || "classic",
+    characterName: character.name,
+  };
+}
+
+function buildCharacterList() {
+  if (!themeSelectorElements) return;
+  const list = themeSelectorElements.characterList;
+  list.textContent = "";
+
+  CHARACTERS.forEach((character) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "character-card";
+
+    const title = document.createElement("div");
+    title.className = "character-title";
+    title.textContent = character.name;
+
+    const meta = document.createElement("div");
+    meta.className = "character-meta";
+    meta.textContent = character.tagline || "";
+
+    const progress = document.createElement("div");
+    progress.className = "character-progress";
+    const unlockedIndex = getUnlockedIndex(character.id);
+    const unlockedCount = Math.min(unlockedIndex + 1, character.themes.length);
+    progress.textContent = `${unlockedCount}/${character.themes.length} themes`;
+
+    button.appendChild(title);
+    button.appendChild(meta);
+    button.appendChild(progress);
+
+    button.addEventListener("click", () => {
+      openThemePanel(character.id);
+    });
+
+    list.appendChild(button);
+  });
+}
+
+function buildThemeList(character) {
+  if (!themeSelectorElements) return;
+  const list = themeSelectorElements.themeList;
+  list.textContent = "";
+
+  const unlockedIndex = getUnlockedIndex(character.id);
+
+  character.themes.forEach((theme, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "theme-card";
+
+    const title = document.createElement("span");
+    title.className = "theme-title";
+    title.textContent = theme.label;
+
+    const status = document.createElement("span");
+    status.className = "theme-status";
+
+    const isUnlocked = index <= unlockedIndex;
+    if (isUnlocked) {
+      status.textContent = index === unlockedIndex && index !== 0 ? "New" : "Unlocked";
+      button.addEventListener("click", () => {
+        selectTheme(character.id, index);
+      });
+    } else {
+      button.classList.add("locked");
+      button.disabled = true;
+      status.textContent = "Locked";
+    }
+
+    button.appendChild(title);
+    button.appendChild(status);
+    list.appendChild(button);
+  });
+}
+
+function openCharacterSelect() {
+  if (!themeSelectorElements) return;
+  themeSelectorElements.title.textContent = "Choose Character";
+  themeSelectorElements.subtitle.classList.remove("hidden");
+  themeSelectorElements.characterList.classList.remove("hidden");
+  themeSelectorElements.themePanel.classList.add("hidden");
+  buildCharacterList();
+}
+
+function openThemePanel(characterId) {
+  if (!themeSelectorElements) return;
+  const character = getCharacterById(characterId);
+  if (!character) return;
+
+  selectedCharacterId = characterId;
+  themeSelectorElements.title.textContent = "Choose Theme";
+  themeSelectorElements.subtitle.classList.add("hidden");
+  themeSelectorElements.characterList.classList.add("hidden");
+  themeSelectorElements.themePanel.classList.remove("hidden");
+  themeSelectorElements.characterName.textContent = character.name;
+  themeSelectorElements.characterTagline.textContent = character.tagline || "";
+  buildThemeList(character);
+}
+
+function selectTheme(characterId, themeIndex) {
+  const character = getCharacterById(characterId);
+  if (!character || !character.themes[themeIndex]) return;
+
+  selectedCharacterId = characterId;
+  selectedThemeIndex = themeIndex;
+  selectedTheme = character.themes[themeIndex].themeKey;
+
+  applyTheme(selectedTheme);
+
+  if (themeSelectorElements) {
+    themeSelectorElements.selector.classList.add("hidden");
+  }
+
+  startGame();
+}
+
+function setupThemeSelector() {
+  const selector = document.getElementById("theme-selector");
+  if (!selector) return;
+
+  themeSelectorElements = {
+    selector,
+    title: selector.querySelector("h1"),
+    subtitle: selector.querySelector(".theme-subtitle"),
+    characterList: document.getElementById("character-list"),
+    themePanel: document.getElementById("theme-panel"),
+    themeList: document.getElementById("theme-list"),
+    backButton: document.getElementById("back-to-characters"),
+    characterName: document.getElementById("character-name"),
+    characterTagline: document.getElementById("character-tagline"),
+  };
+
+  if (themeSelectorElements.backButton) {
+    themeSelectorElements.backButton.addEventListener("click", () => {
+      openCharacterSelect();
+    });
+  }
+
+  openCharacterSelect();
+}
+
+function unlockNextTheme() {
+  if (!selectedCharacterId) return;
+  const character = getCharacterById(selectedCharacterId);
+  if (!character) return;
+
+  const unlockedIndex = getUnlockedIndex(selectedCharacterId);
+  if (selectedThemeIndex < unlockedIndex) return;
+  if (selectedThemeIndex >= character.themes.length - 1) return;
+
+  setUnlockedIndex(selectedCharacterId, selectedThemeIndex + 1);
+}
+*/
+
 function renderLeaderboard() {
   if (!leaderboardElements) return;
   const list = leaderboardElements.list;
@@ -122,6 +357,7 @@ function renderLeaderboard() {
 
     const metaParts = [];
     if (entry.maxTile) metaParts.push(`Tile ${entry.maxTile}`);
+    if (entry.character) metaParts.push(entry.character);
     if (entry.theme) metaParts.push(entry.theme);
     if (entry.date) {
       const formatted = formatDate(entry.date);
@@ -187,7 +423,7 @@ function queueScoreEntry(score, grid) {
   pendingEntry = {
     score: score,
     maxTile: getMaxTileValue(grid),
-    theme: selectedTheme,
+    theme: "Classic",
     date: new Date().toISOString(),
   };
 
@@ -297,25 +533,8 @@ function setupLeaderboardUI() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupLeaderboardUI();
-
-  // Theme Selection Logic
-  const themeSelector = document.getElementById('theme-selector');
-  const buttons = document.querySelectorAll('.theme-btn');
-  
-  if (themeSelector) {
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          selectedTheme = btn.dataset.theme;
-          applyTheme(selectedTheme);
-          themeSelector.classList.add('hidden');
-          startGame();
-        });
-      });
-  } else {
-      // Fallback if no selector (e.g. old HTML)
-      applyTheme('classic');
-      startGame();
-  }
+  applyTheme("classic");
+  startGame();
 });
 
 function applyTheme(theme) {
@@ -360,10 +579,8 @@ function startGame() {
 }
 
 function showThemeSelector() {
-  const themeSelector = document.getElementById('theme-selector');
-  if (themeSelector) {
-    themeSelector.classList.remove('hidden');
-  }
+  applyTheme("classic");
+  startGame();
 }
 
 class GameManager {
@@ -550,7 +767,9 @@ class GameManager {
             self.score += merged.value;
 
             // The mighty 2048 tile
-            if (merged.value === 2048) self.won = true;
+            if (merged.value === 2048) {
+              self.won = true;
+            }
           } else {
             self.moveTile(tile, positions.farthest);
           }

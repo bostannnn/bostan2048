@@ -11,13 +11,26 @@
     <link rel="apple-touch-icon" href="assets/classic/2048.jpg">
 </head>
 <body>
+    <!-- Character/theme selector disabled; classic theme launches by default. -->
+    <!--
     <div id="theme-selector" class="theme-selector">
-        <h1>Select Theme</h1>
-        <div class="theme-options">
-            <button class="theme-btn" data-theme="classic">Classic</button>
-            <button class="theme-btn" data-theme="nature">Nature</button>
+        <div class="theme-selector-content">
+            <h1>Choose Character</h1>
+            <p class="theme-subtitle">Unlock new themes by reaching 2048.</p>
+            <div id="character-list" class="character-list"></div>
+            <div id="theme-panel" class="theme-panel hidden">
+                <div class="theme-panel-header">
+                    <button id="back-to-characters" class="secondary">Back</button>
+                    <div class="theme-panel-title">
+                        <h2 id="character-name"></h2>
+                        <p id="character-tagline"></p>
+                    </div>
+                </div>
+                <div id="theme-list" class="theme-grid"></div>
+            </div>
         </div>
     </div>
+    -->
 
     <div id="leaderboard" class="overlay hidden">
         <div class="overlay-content">
