@@ -52,6 +52,12 @@
         </div>
     </div>
 
+    <div id="update-toast" class="update-toast hidden" role="status" aria-live="polite">
+        <span>Update ready.</span>
+        <button id="update-refresh" type="button">Refresh</button>
+        <button id="update-dismiss" type="button" class="secondary">Later</button>
+    </div>
+
     <div class="container">
         <header>
             <h1>Photo 2048</h1>
@@ -60,12 +66,17 @@
                 <div class="best-container">0</div>
             </div>
             <div class="header-buttons">
+                <button id="dev-menu-toggle" class="dev-button" aria-label="Developer menu">👻</button>
                 <button id="show-leaderboard">Scores 🏆</button>
                 <button id="undo-button" class="undo-button" disabled>Undo ↩️</button>
                 <button class="restart-button">New Game</button>
             </div>
         </header>
         
+        <div id="dev-menu" class="dev-menu hidden">
+            <button id="dev-game-over" type="button">Instant game over</button>
+        </div>
+
         <div class="game-container">
             <div class="grid-container">
                 <!-- Grid cells will be generated here -->
@@ -94,6 +105,10 @@
         <div class="game-message">
             <p></p>
             <div class="game-quote hidden"></div>
+            <div class="quote-controls hidden">
+                <a class="quote-prev-button">Prev quote</a>
+                <a class="quote-next-button">Next quote</a>
+            </div>
             <div class="lower">
                 <a class="keep-playing-button">Keep playing</a>
                 <a class="retry-button">Try again</a>

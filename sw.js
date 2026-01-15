@@ -14,6 +14,12 @@ const THEME_ASSETS = THEMES.flatMap((theme) =>
 );
 const ASSETS_TO_CACHE = CORE_ASSETS.concat(THEME_ASSETS);
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Install event: Cache core assets
 self.addEventListener('install', (event) => {
   event.waitUntil(

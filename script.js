@@ -5,8 +5,19 @@ let customImageAvailability = {};
 let themeLoadToken = 0;
 
 if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (updateRefreshRequested) {
+      window.location.reload();
+    }
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then((registration) => {
+        trackServiceWorkerUpdates(registration);
+      })
+      .catch(() => {});
   });
 }
 
@@ -16,6 +27,148 @@ const MAX_LEADERBOARD_ENTRIES = 10;
 let pendingEntry = null;
 let leaderboardElements = null;
 let boardRefreshScheduled = false;
+let devMenuElements = null;
+let updateUIElements = null;
+let pendingUpdateRegistration = null;
+let updateRefreshRequested = false;
+
+const GAME_OVER_QUOTES = [
+  "If you don't take risks, you can't create a future. - Monkey D. Luffy (One Piece)",
+  "A dropout will beat a genius through hard work. - Rock Lee (Naruto)",
+  "If you don't like your destiny, don't accept it. Instead, have the courage to change it the way you want it to be. - Naruto Uzumaki (Naruto)",
+  "The only thing we're allowed to do is believe that we won't regret the choice we made. - Levi Ackerman (Attack on Titan)",
+  "Life is not a game of luck. If you wanna win, work hard. - Sora (No Game No Life)",
+  "Don't give up, there's no shame in falling down! The true shame is to not stand up again! - Shintaro Midorima (Kuroko's Basketball)",
+  "If you can't do something, then don't. Focus on what you can do. - Shiroe (Log Horizon)",
+  "Giving up is what kills people. - Alucard (Hellsing)",
+  "If you're gonna hit it, hit it until it breaks. - Oikawa Tooru (Haikyuu!!)",
+  "Miracles happen to those who have the courage to keep on trying! - Nami (One Piece)",
+  "Hard work is worthless for those that don't believe in themselves. - Naruto Uzumaki (Naruto)",
+  "The difference between a novice and a master is that a master has failed more times than a novice has tried. - Koro-sensei (Assassination Classroom)",
+  "It's not whether you can or can't. You do it because you want to. - Luffy (One Piece)",
+  "Even if I'm weak, I'll save you! - Izuku Midoriya (My Hero Academia)",
+  "Don't believe in yourself! Believe in the me who believes in you! - Kamina (Gurren Lagann)",
+  "If you turn your eyes away from sad things, they'll happen again one day. If you keep running away, you'll keep repeating the same mistakes. - Riki Naoe (Little Busters!)",
+  "Motivation? What more do you need than the pride of a gamer? - Kirito (Sword Art Online)",
+  "You can't sit around envying other people's worlds. You have to go out and change your own. - Shinichi Chiaki (Nodame Cantabile)",
+  "A lesson without pain is meaningless. - Edward Elric (Fullmetal Alchemist: Brotherhood)",
+  "Set your heart ablaze. - Kyojuro Rengoku (Demon Slayer)",
+  "People die when they are forgotten. - Dr. Hiriluk (One Piece)",
+  "The world isn't perfect. But it's there for us, doing the best it can... that's what makes it so damn beautiful. - Roy Mustang (Fullmetal Alchemist)",
+  "Fear is not evil. It tells you what your weakness is. And once you know your weakness, you can become stronger as well as kinder. - Gildarts Clive (Fairy Tail)",
+  "Whatever you lose, you'll find it again. But what you throw away you'll never get back. - Kenshin Himura (Rurouni Kenshin)",
+  "The world cannot be changed with pretty words alone. - Lelouch Lamperouge (Code Geass)",
+  "To know sorrow is not terrifying. What is terrifying is to know you can't go back to happiness you could have. - Matsumoto Rangiku (Bleach)",
+  "We are all like fireworks: We climb, we shine and always go our separate ways and become further apart. - Toshiro Hitsugaya (Bleach)",
+  "I hate perfection. To be perfect is to be unable to improve any further. - Mayuri Kurotsuchi (Bleach)",
+  "Human beings are strong because we can change ourselves. - Saitama (One Punch Man)",
+  "Knowing what it feels like to be in pain, is exactly why we try to be kind to others. - Jiraiya (Naruto)",
+  "The past is the past. We cannot indulge ourselves in memories and destroy the present. - Murata Ken (Kyou Kara Maou!)",
+  "If you want to get to know someone, find out what makes them angry. - Gon Freecss (Hunter x Hunter)",
+  "The loneliest people are the kindest. The saddest people smile the brightest. - Jellal Fernandes (Fairy Tail)",
+  "Fake people have an image to maintain. Real people just don't care. - Hachiman Hikigaya (Oregairu)",
+  "A person can change, at the moment when the person wishes to change. - Haruhi Fujioka (Ouran High School Host Club)",
+  "Thinking you're no-good and worthless is the worst thing you can do. - Nobito (Doraemon)",
+  "In our society, letting others know what you're thinking is a really hard thing to do. - Naruto Uzumaki (Naruto)",
+  "If you look away and just turn your back on those you don't understand, you'll regret it one day. - Naruto Uzumaki (Naruto)",
+  "Being alone is better than being with the wrong person. - L Lawliet (Death Note)",
+  "It's meaningless to just live, and it's meaningless to just fight. I want to win. - Ichigo Kurosaki (Bleach)",
+  "I am the hope of the universe. I am the answer to all living things that cry out for peace. - Goku (Dragon Ball Z)",
+  "Wake up to reality! Nothing ever goes as planned in this world. - Madara Uchiha (Naruto)",
+  "Omae wa mou shindeiru. (You are already dead.) - Kenshiro (Fist of the North Star)",
+  "Throughout heaven and earth, I alone am the honored one. - Satoru Gojo (Jujutsu Kaisen)",
+  "I'm not gonna run away, I never go back on my word! That's my nindo: my ninja way! - Naruto Uzumaki (Naruto)",
+  "Yowai mo. (You are weak.) - Satoru Gojo (Jujutsu Kaisen)",
+  "If you win, you live. If you lose, you die. If you don't fight, you can't win! - Eren Yeager (Attack on Titan)",
+  "Do you have any idea how stupid we are? Don't underestimate us! - Kondo Isao (Gintama)",
+  "The weak are destined to lie beneath the boots of the strong. - Esdeath (Akame ga Kill!)",
+  "Justice comes from vengeance, but that justice only breeds more vengeance. - Pain/Nagato (Naruto)",
+  "It's over 9000! - Vegeta (Dragon Ball Z)",
+  "Push through the pain, giving up hurts more. - Vegeta (Dragon Ball Z)",
+  "I don't want to conquer anything. I just think the guy with the most freedom in this ocean is the Pirate King! - Luffy (One Piece)",
+  "When a man learns to love, he must bear the risk of hatred. - Madara Uchiha (Naruto)",
+  "Revenge is just the path you take to escape your suffering. - Ichigo Kurosaki (Bleach)",
+  "Power comes in response to a need, not a desire. - Goku (Dragon Ball Z)",
+  "I want you to be happy. I want you to laugh a lot. I don't know what exactly I'll be able to do for you, but I'll always be by your side. - Kagome (Inuyasha)",
+  "Sorry, but I can't accompany you to your death. - Kurapika (Hunter x Hunter)",
+  "Those who break the rules are scum, but those who abandon their friends are worse than scum. - Obito Uchiha (Naruto)",
+  "A wound that would kill an ordinary man... I will not let it kill me! - Roronoa Zoro (One Piece)",
+  "If I can meet you again, against the 6 billion to 1 odds, even if you can't move, I'll marry you. - Hideki Hinata (Angel Beats!)",
+  "I love you with all my heart! If you were to stay here with me, there would be no regrets. - Sakura Haruno (Naruto)",
+  "Even if I lose this feeling, I'll love you all over again. - Syaoran Li (Cardcaptor Sakura)",
+  "I was dead until the moment I met you. - Lelouch Lamperouge (Code Geass)",
+  "Love is simply an electrical bug in the human neural circuit. - Akasaka Ryuunosuke (Pet Girl of Sakurasou)",
+  "Because people don't have wings, they look for ways to fly. - Ukai Keishin (Haikyuu!!)",
+  "It was like you brought color to my life. You changed my life, all by yourself. - Sawako Kuronuma (Kimi ni Todoke)",
+  "No matter which line of world you're in, I'm not alone. I'm with you. - Okabe Rintarou (Steins;Gate)",
+  "I want to be with you. From now on, I want to spend all and every single one of my days until I die with you, and only you. - Naruto Uzumaki (The Last: Naruto the Movie)",
+  "Even if the world sends you to hell, I will be the one to get you out. - Roronoa Zoro (One Piece)",
+  "If you love someone, he could make you sad. He could even make you feel lonely sometimes. But that person can also make you happier than you'll ever be. - Saki Hanajima (Fruits Basket)",
+  "We are not defined by our past, but by the choices we make in the present. - Kirito (Sword Art Online)",
+  "If you don't share someone's pain, you can never understand them. - Nagato (Naruto)",
+  "People who can't throw away something important can never hope to change anything. - Armin Arlert (Attack on Titan)",
+  "It's okay not to be okay. - Unknown (Often attributed to Tokyo Ghoul themes)",
+  "I want to know what 'I love you' means. - Violet Evergarden (Violet Evergarden)",
+  "There are things you can't take back. But the world is full of things that you can change. - Satoru Fujinuma (Erased)",
+  "Sometimes, I wonder if I'm even human. - Kaneki Ken (Tokyo Ghoul)",
+  "The sun will rise again. - Eren Yeager (Implied theme, Attack on Titan)",
+  "Friendship isn't something you choose. It's something that chooses you. - Misty (Pokemon)",
+  "Bang. - Spike Spiegel (Cowboy Bebop)",
+  "I'll take a potato chip... AND EAT IT! - Light Yagami (Death Note)",
+  "El Psy Kongroo. - Okabe Rintarou (Steins;Gate)",
+  "Believe it! - Naruto Uzumaki (Naruto)",
+  "Dattebayo! - Naruto Uzumaki (Naruto)",
+  "Plus Ultra! - All Might (My Hero Academia)",
+  "Just who the hell do you think I am?! - Kamina (Gurren Lagann)",
+  "Kaizoku ou ni ore wa naru! (I'm gonna be King of the Pirates!) - Luffy (One Piece)",
+  "Nico Nico Nii! - Nico Yazawa (Love Live!)",
+  "Yare Yare Daze. (Good grief.) - Jotaro Kujo (JoJo's Bizarre Adventure)",
+  "Whatever happens, happens. - Spike Spiegel (Cowboy Bebop)",
+  "See you space cowboy. - (Cowboy Bebop End Card)",
+  "Bankai. - Ichigo Kurosaki (Bleach)",
+  "Tatake. (Fight.) - Eren Yeager (Attack on Titan)",
+  "Mada mada dane. (You still have a ways to go.) - Ryoma Echizen (Prince of Tennis)",
+  "Equivalent Exchange. - (Fullmetal Alchemist)",
+  "The weak don't get to choose how they die. - Trafalgar Law (One Piece)",
+  "Is this a pigeon? - Android (Viral Meme from The Brave Fighter of Sun Fighbird)",
+  "Humans are interesting. - Ryuk (Death Note)",
+  "You are my Nakama! - Luffy (One Piece)"
+];
+let lastGameOverQuoteIndex = -1;
+let currentGameOverQuoteIndex = -1;
+
+function normalizeQuoteIndex(index) {
+  const count = GAME_OVER_QUOTES.length;
+  if (!count) return -1;
+  return ((index % count) + count) % count;
+}
+
+function setGameOverQuoteIndex(index) {
+  const normalized = normalizeQuoteIndex(index);
+  if (normalized < 0) return "";
+  currentGameOverQuoteIndex = normalized;
+  lastGameOverQuoteIndex = normalized;
+  return GAME_OVER_QUOTES[normalized];
+}
+
+function getRandomGameOverQuote() {
+  if (!GAME_OVER_QUOTES.length) return "";
+  let index = Math.floor(Math.random() * GAME_OVER_QUOTES.length);
+  if (GAME_OVER_QUOTES.length > 1) {
+    while (index === lastGameOverQuoteIndex) {
+      index = Math.floor(Math.random() * GAME_OVER_QUOTES.length);
+    }
+  }
+  return setGameOverQuoteIndex(index);
+}
+
+function cycleGameOverQuote(step) {
+  if (!GAME_OVER_QUOTES.length) return "";
+  if (currentGameOverQuoteIndex < 0) {
+    return getRandomGameOverQuote();
+  }
+  return setGameOverQuoteIndex(currentGameOverQuoteIndex + step);
+}
 
 /*
 const CHARACTER_UNLOCK_KEY = "photo2048CharacterUnlocks";
@@ -61,6 +214,68 @@ function scheduleBoardRefresh() {
     if (gameInstance) {
       gameInstance.actuate();
     }
+  });
+}
+
+function setupUpdateToast() {
+  const toast = document.getElementById("update-toast");
+  const refreshButton = document.getElementById("update-refresh");
+  const dismissButton = document.getElementById("update-dismiss");
+
+  if (!toast || !refreshButton) return;
+
+  updateUIElements = { toast, refreshButton, dismissButton };
+
+  refreshButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    requestUpdateRefresh();
+  });
+
+  if (dismissButton) {
+    dismissButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      hideUpdateToast();
+    });
+  }
+}
+
+function showUpdateToast(registration) {
+  if (registration) {
+    pendingUpdateRegistration = registration;
+  }
+  if (!updateUIElements) return;
+  updateUIElements.toast.classList.remove("hidden");
+}
+
+function hideUpdateToast() {
+  if (!updateUIElements) return;
+  updateUIElements.toast.classList.add("hidden");
+}
+
+function requestUpdateRefresh() {
+  updateRefreshRequested = true;
+  if (pendingUpdateRegistration && pendingUpdateRegistration.waiting) {
+    pendingUpdateRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
+  } else {
+    window.location.reload();
+  }
+}
+
+function trackServiceWorkerUpdates(registration) {
+  if (!registration) return;
+
+  if (registration.waiting) {
+    showUpdateToast(registration);
+  }
+
+  registration.addEventListener("updatefound", () => {
+    const installing = registration.installing;
+    if (!installing) return;
+    installing.addEventListener("statechange", () => {
+      if (installing.state === "installed" && navigator.serviceWorker.controller) {
+        showUpdateToast(registration);
+      }
+    });
   });
 }
 
@@ -541,6 +756,8 @@ function setupLeaderboardUI() {
 
 document.addEventListener("DOMContentLoaded", () => {
   setupLeaderboardUI();
+  setupDevMenu();
+  setupUpdateToast();
   applyTheme("classic");
   startGame();
 });
@@ -589,6 +806,45 @@ function startGame() {
 function showThemeSelector() {
   applyTheme("classic");
   startGame();
+}
+
+function setupDevMenu() {
+  const toggle = document.getElementById("dev-menu-toggle");
+  const menu = document.getElementById("dev-menu");
+  const gameOverButton = document.getElementById("dev-game-over");
+
+  if (!toggle || !menu || !gameOverButton) return;
+
+  devMenuElements = { toggle, menu, gameOverButton };
+
+  const closeMenu = () => menu.classList.add("hidden");
+  const toggleMenu = () => menu.classList.toggle("hidden");
+
+  toggle.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleMenu();
+  });
+
+  menu.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (menu.classList.contains("hidden")) return;
+    if (event.target === toggle || menu.contains(event.target)) return;
+    closeMenu();
+  });
+
+  gameOverButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    closeMenu();
+    if (!gameInstance || gameInstance.over) return;
+    gameInstance.over = true;
+    gameInstance.won = false;
+    gameInstance.keepPlaying = false;
+    gameInstance.actuate();
+  });
 }
 
 class GameManager {
@@ -1091,10 +1347,15 @@ class HTMLActuator {
     this.scoreContainer = document.querySelector(".score-container");
     this.bestContainer = document.querySelector(".best-container");
     this.messageContainer = document.querySelector(".game-message");
+    this.quoteContainer = document.querySelector(".game-quote");
+    this.quoteControls = document.querySelector(".quote-controls");
+    this.quotePrevButton = document.querySelector(".quote-prev-button");
+    this.quoteNextButton = document.querySelector(".quote-next-button");
     this.gameContainer = document.querySelector(".game-container");
     this.undoButton = document.getElementById("undo-button");
     this.score = 0;
     this.undoEffectTimeout = null;
+    this.bindQuoteControls();
   }
 
   actuate(grid, metadata) {
@@ -1235,17 +1496,72 @@ class HTMLActuator {
     this.bestContainer.textContent = bestScore;
   }
 
+  bindQuoteControls() {
+    if (this.quotePrevButton) {
+      this.quotePrevButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        this.cycleQuote(-1);
+      });
+    }
+    if (this.quoteNextButton) {
+      this.quoteNextButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        this.cycleQuote(1);
+      });
+    }
+  }
+
+  setQuoteControlsVisible(isVisible) {
+    if (!this.quoteControls) return;
+    this.quoteControls.classList.toggle("hidden", !isVisible);
+  }
+
+  showGameOverQuote(quote, reanimate) {
+    if (!this.quoteContainer) return;
+    this.quoteContainer.classList.remove("quote-refresh");
+    this.quoteContainer.textContent = quote;
+    this.quoteContainer.classList.remove("hidden");
+    if (reanimate) {
+      void this.quoteContainer.offsetWidth;
+      this.quoteContainer.classList.add("quote-refresh");
+    }
+  }
+
+  cycleQuote(step) {
+    const quote = cycleGameOverQuote(step);
+    if (!quote) return;
+    this.showGameOverQuote(quote, true);
+  }
+
   message(won) {
     var type = won ? "game-won" : "game-over";
     var message = won ? "You win!" : "Game over!";
 
     this.messageContainer.classList.add(type);
     this.messageContainer.getElementsByTagName("p")[0].textContent = message;
+
+    if (won) {
+      if (this.quoteContainer) {
+        this.quoteContainer.textContent = "";
+        this.quoteContainer.classList.add("hidden");
+      }
+      this.setQuoteControlsVisible(false);
+    } else {
+      const quote = getRandomGameOverQuote();
+      this.showGameOverQuote(quote, false);
+      this.setQuoteControlsVisible(true);
+    }
   }
 
   clearMessage() {
     this.messageContainer.classList.remove("game-won");
     this.messageContainer.classList.remove("game-over");
+    if (this.quoteContainer) {
+      this.quoteContainer.textContent = "";
+      this.quoteContainer.classList.add("hidden");
+      this.quoteContainer.classList.remove("quote-refresh");
+    }
+    this.setQuoteControlsVisible(false);
   }
 
   setUndoAvailable(isAvailable) {
