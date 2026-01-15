@@ -265,10 +265,6 @@ button:disabled:hover {
   button {
     margin-left: 0;
   }
-  .game-container {
-    margin-top: 8px;
-    margin-bottom: 40px;
-  }
   .dev-menu {
     top: 120px;
     right: 12px;
@@ -296,6 +292,13 @@ button:disabled:hover {
 .game-container.undo-flash {
   animation: undo-flash 700ms ease;
   transform-origin: center;
+}
+
+@media screen and (max-width: 600px) {
+  .game-container {
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
 }
 
 .grid-container {
