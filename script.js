@@ -382,6 +382,14 @@ function renderLeaderboard() {
   });
 }
 
+function clearPendingEntry() {
+  if (!pendingEntry) return;
+  pendingEntry = null;
+  if (!leaderboardElements) return;
+  leaderboardElements.entry.classList.add("hidden");
+  leaderboardElements.overlay.classList.add("hidden");
+}
+
 function commitPendingEntry(name) {
   if (!pendingEntry) return;
   const cleanName = String(name || "").trim();
@@ -590,12 +598,14 @@ class GameManager {
     this.storageManager = new StorageManager();
     this.actuator = new Actuator();
     this.resultRecorded = false;
+    this.undoState = null;
 
     this.startTiles = 2;
 
     this.inputManager.on("move", this.move.bind(this));
     this.inputManager.on("restart", this.restart.bind(this));
     this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+    this.inputManager.on("undo", this.undo.bind(this));
 
     this.setup();
   }
@@ -606,6 +616,7 @@ class GameManager {
   
   reset() {
     this.storageManager.clearGameState();
+    this.storageManager.clearUndoState();
     this.actuator.continueGame(); // Clear the game won/lost message
     this.setup();
   }
@@ -622,6 +633,7 @@ class GameManager {
 
   setup() {
     var previousState = this.storageManager.getGameState();
+    var storedUndoState = this.storageManager.getUndoState();
 
     // Reload the game from a previous game if present
     if (previousState) {
@@ -631,6 +643,7 @@ class GameManager {
       this.won = previousState.won;
       this.keepPlaying = previousState.keepPlaying;
       this.resultRecorded = !!previousState.resultRecorded;
+      this.undoState = storedUndoState;
     } else {
       this.grid = new Grid(this.size);
       this.score = 0;
@@ -638,6 +651,8 @@ class GameManager {
       this.won = false;
       this.keepPlaying = false;
       this.resultRecorded = false;
+      this.undoState = null;
+      this.storageManager.clearUndoState();
 
       // Add the initial tiles
       this.addStartTiles();
@@ -695,6 +710,8 @@ class GameManager {
     if (shouldRecordResult) {
       queueScoreEntry(this.score, this.grid);
     }
+
+    this.updateUndoAvailability();
   }
 
   // Represent the current game as an object
@@ -707,6 +724,52 @@ class GameManager {
       keepPlaying: this.keepPlaying,
       resultRecorded: this.resultRecorded,
     };
+  }
+
+  setUndoState(state) {
+    this.undoState = state || null;
+    if (this.storageManager && this.storageManager.setUndoState) {
+      this.storageManager.setUndoState(this.undoState);
+    }
+    this.updateUndoAvailability();
+  }
+
+  updateUndoAvailability() {
+    if (this.actuator && this.actuator.setUndoAvailable) {
+      this.actuator.setUndoAvailable(!!this.undoState);
+    }
+  }
+
+  restoreState(state) {
+    if (!state || !state.grid) return;
+
+    this.grid = new Grid(state.grid.size, state.grid.cells);
+    this.score = state.score;
+    this.over = state.over;
+    this.won = state.won;
+    this.keepPlaying = state.keepPlaying;
+    this.resultRecorded = !!state.resultRecorded;
+
+    this.grid.eachCell((x, y, tile) => {
+      if (tile) {
+        tile.mergedFrom = null;
+        tile.previousPosition = { x, y };
+      }
+    });
+
+    this.actuator.continueGame();
+    this.actuate();
+  }
+
+  undo() {
+    if (!this.undoState) return;
+    const previous = this.undoState;
+    this.setUndoState(null);
+    clearPendingEntry();
+    this.restoreState(previous);
+    if (this.actuator && this.actuator.playUndoEffect) {
+      this.actuator.playUndoEffect();
+    }
   }
 
   // Save all tile positions and remove merger info
@@ -732,6 +795,8 @@ class GameManager {
     var self = this;
 
     if (this.isGameTerminated()) return; // Don't do anything if the game's over
+
+    var previousState = this.serialize();
 
     var cell, tile;
 
@@ -782,6 +847,7 @@ class GameManager {
     });
 
     if (moved) {
+      this.setUndoState(previousState);
       this.addRandomTile();
 
       if (!this.movesAvailable()) {
@@ -1025,7 +1091,10 @@ class HTMLActuator {
     this.scoreContainer = document.querySelector(".score-container");
     this.bestContainer = document.querySelector(".best-container");
     this.messageContainer = document.querySelector(".game-message");
+    this.gameContainer = document.querySelector(".game-container");
+    this.undoButton = document.getElementById("undo-button");
     this.score = 0;
+    this.undoEffectTimeout = null;
   }
 
   actuate(grid, metadata) {
@@ -1178,6 +1247,32 @@ class HTMLActuator {
     this.messageContainer.classList.remove("game-won");
     this.messageContainer.classList.remove("game-over");
   }
+
+  setUndoAvailable(isAvailable) {
+    if (!this.undoButton) return;
+    this.undoButton.disabled = !isAvailable;
+  }
+
+  playUndoEffect() {
+    if (this.gameContainer) {
+      this.gameContainer.classList.remove("undo-flash");
+      void this.gameContainer.offsetWidth;
+      this.gameContainer.classList.add("undo-flash");
+      if (this.undoEffectTimeout) {
+        window.clearTimeout(this.undoEffectTimeout);
+      }
+      this.undoEffectTimeout = window.setTimeout(() => {
+        if (this.gameContainer) {
+          this.gameContainer.classList.remove("undo-flash");
+        }
+        this.undoEffectTimeout = null;
+      }, 700);
+    }
+
+    if (window.effectManager && window.effectManager.rewind) {
+      window.effectManager.rewind();
+    }
+  }
 }
 
 class KeyboardInputManager {
@@ -1264,6 +1359,11 @@ class KeyboardInputManager {
         }
       }
 
+      if (!modifiers && event.which === 85) {
+        event.preventDefault();
+        self.emit("undo");
+      }
+
       // R key restarts the game
       if (!modifiers && event.which === 82) {
         self.restart.call(self, event);
@@ -1273,6 +1373,7 @@ class KeyboardInputManager {
     // Respond to button presses
     this.bindButtonPress(".retry-button", this.restart);
     this.bindButtonPress(".restart-button", this.restart);
+    this.bindButtonPress(".undo-button", this.undo);
     this.bindButtonPress(".keep-playing-button", this.keepPlaying);
 
     // Respond to swipe events
@@ -1371,6 +1472,11 @@ class KeyboardInputManager {
     this.emit("restart");
   }
 
+  undo(event) {
+    event.preventDefault();
+    this.emit("undo");
+  }
+
   keepPlaying(event) {
     event.preventDefault();
     this.emit("keepPlaying");
@@ -1378,6 +1484,7 @@ class KeyboardInputManager {
 
   bindButtonPress(selector, fn) {
     var button = document.querySelector(selector);
+    if (!button) return;
     button.addEventListener("click", fn.bind(this));
     button.addEventListener(this.eventTouchend, fn.bind(this));
   }
@@ -1387,6 +1494,7 @@ class LocalStorageManager {
   constructor() {
     this.bestScoreKey = "bestScore";
     this.gameStateKey = "gameState";
+    this.undoStateKey = "undoState";
     var supported = this.localStorageSupported();
     this.storage = supported ? window.localStorage : window.fakeStorage;
   }
@@ -1423,6 +1531,28 @@ class LocalStorageManager {
 
   clearGameState() {
     this.storage.removeItem(this.gameStateKey);
+  }
+
+  getUndoState() {
+    var stateJSON = this.storage.getItem(this.undoStateKey);
+    if (!stateJSON) return null;
+    try {
+      return JSON.parse(stateJSON);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  setUndoState(undoState) {
+    if (!undoState) {
+      this.storage.removeItem(this.undoStateKey);
+      return;
+    }
+    this.storage.setItem(this.undoStateKey, JSON.stringify(undoState));
+  }
+
+  clearUndoState() {
+    this.storage.removeItem(this.undoStateKey);
   }
 }
 

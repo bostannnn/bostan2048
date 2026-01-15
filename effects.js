@@ -31,6 +31,28 @@ class EffectManager {
         this.createParticles(x, y, value);
     }
 
+    rewind() {
+        const x = this.canvas.width / 2;
+        const y = this.canvas.height / 2;
+        const radius = Math.min(this.canvas.width, this.canvas.height) * 0.55;
+        const palette = ['#ffffff', '#e0c3fc', '#8ec5fc', '#f6d365', '#fda085'];
+        const count = Math.min(200, Math.floor(radius * 0.6));
+
+        this.particles.push(new RewindRing(x, y, radius, '#ffffff'));
+        this.particles.push(new RewindRing(x, y, radius * 0.75, '#e0c3fc'));
+        this.particles.push(new ClockRing(x, y, radius * 0.9, '#ffffff'));
+        this.particles.push(new ClockRing(x, y, radius * 0.65, '#8ec5fc', 36));
+        this.particles.push(new ClockHand(x, y, radius * 0.55, 4, '#ffffff', -0.18));
+        this.particles.push(new ClockHand(x, y, radius * 0.4, 6, '#f6d365', -0.12));
+
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const ringRadius = radius * (0.6 + Math.random() * 0.4);
+            const color = palette[i % palette.length];
+            this.particles.push(new RewindParticle(x, y, angle, ringRadius, color));
+        }
+    }
+
     createParticles(x, y, value) {
         const tier = Math.max(1, Math.log2(value));
         let count = Math.floor(tier * 10); 
@@ -199,6 +221,159 @@ class Shockwave {
         ctx.strokeStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class RewindParticle {
+    constructor(x, y, angle, radius, color) {
+        this.x = x + Math.cos(angle) * radius;
+        this.y = y + Math.sin(angle) * radius;
+        const inward = 2.5 + Math.random() * 2.5;
+        const swirl = (Math.random() * 1.2 + 0.4) * (Math.random() < 0.5 ? -1 : 1);
+        const dx = Math.cos(angle);
+        const dy = Math.sin(angle);
+        this.vx = -dx * inward + -dy * swirl;
+        this.vy = -dy * inward + dx * swirl;
+        this.life = 1.0;
+        this.decay = Math.random() * 0.02 + 0.015;
+        this.size = Math.random() * 3 + 1;
+        this.color = color;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+        this.size *= 0.97;
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.size;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x - this.vx * 2.5, this.y - this.vy * 2.5);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class RewindRing {
+    constructor(x, y, radius, color) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.life = 1.0;
+        this.decay = 0.04;
+    }
+
+    update() {
+        this.radius -= 8;
+        this.life -= this.decay;
+        if (this.radius <= 0) {
+            this.life = 0;
+        }
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = this.color;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+class ClockRing {
+    constructor(x, y, radius, color, tickCount = 60) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.tickCount = tickCount;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.spin = -(Math.random() * 0.08 + 0.06);
+        this.life = 1.0;
+        this.decay = 0.035;
+    }
+
+    update() {
+        this.rotation += this.spin;
+        this.life -= this.decay;
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.globalAlpha = this.life * 0.9;
+        ctx.strokeStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+
+        for (let i = 0; i < this.tickCount; i++) {
+            const isHour = i % Math.max(1, Math.round(this.tickCount / 12)) === 0;
+            const tickLength = isHour ? 14 : 7;
+            const tickWidth = isHour ? 3 : 2;
+            ctx.lineWidth = tickWidth;
+            ctx.beginPath();
+            ctx.moveTo(0, -this.radius);
+            ctx.lineTo(0, -this.radius + tickLength);
+            ctx.stroke();
+            ctx.rotate((Math.PI * 2) / this.tickCount);
+        }
+
+        ctx.restore();
+    }
+}
+
+class ClockHand {
+    constructor(x, y, length, width, color, speed) {
+        this.x = x;
+        this.y = y;
+        this.length = length;
+        this.width = width;
+        this.color = color;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.speed = speed;
+        this.life = 1.0;
+        this.decay = 0.04;
+    }
+
+    update() {
+        this.rotation += this.speed;
+        this.life -= this.decay;
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.globalAlpha = this.life;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.width;
+        ctx.lineCap = 'round';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -this.length);
         ctx.stroke();
         ctx.restore();
     }
