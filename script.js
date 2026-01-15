@@ -676,6 +676,7 @@ class KeyboardInputManager {
     // Respond to swipe events
     var touchStartClientX, touchStartClientY;
     var gameContainer = document.getElementsByClassName("game-container")[0];
+    var hasSwiped = false;
 
     gameContainer.addEventListener(this.eventTouchstart, function (event) {
       if (
@@ -693,11 +694,42 @@ class KeyboardInputManager {
         touchStartClientY = event.touches[0].clientY;
       }
 
+      hasSwiped = false;
       event.preventDefault();
     });
 
     gameContainer.addEventListener(this.eventTouchmove, function (event) {
       event.preventDefault();
+
+      if (hasSwiped) return;
+
+      if (
+        (!window.navigator.msPointerEnabled && event.touches.length > 1) ||
+        event.targetTouches.length > 1
+      ) {
+        return; // Ignore if touching with more than 1 finger
+      }
+
+      var touchEndClientX, touchEndClientY;
+
+      if (window.navigator.msPointerEnabled) {
+        touchEndClientX = event.pageX;
+        touchEndClientY = event.pageY;
+      } else {
+        touchEndClientX = event.touches[0].clientX;
+        touchEndClientY = event.touches[0].clientY;
+      }
+
+      var dx = touchEndClientX - touchStartClientX;
+      var dy = touchEndClientY - touchStartClientY;
+      var absDx = Math.abs(dx);
+      var absDy = Math.abs(dy);
+
+      if (Math.max(absDx, absDy) > 10) {
+        // (right : left) : (down : up)
+        self.emit("move", absDx > absDy ? (dx > 0 ? 1 : 3) : dy > 0 ? 2 : 0);
+        hasSwiped = true;
+      }
     });
 
     gameContainer.addEventListener(this.eventTouchend, function (event) {
@@ -707,6 +739,8 @@ class KeyboardInputManager {
       ) {
         return; // Ignore if still touching with one or more fingers
       }
+
+      if (hasSwiped) return;
 
       var touchEndClientX, touchEndClientY;
 
