@@ -812,10 +812,11 @@ function setupDevMenu() {
   const toggle = document.getElementById("dev-menu-toggle");
   const menu = document.getElementById("dev-menu");
   const gameOverButton = document.getElementById("dev-game-over");
+  const add2048Button = document.getElementById("dev-add-2048");
 
-  if (!toggle || !menu || !gameOverButton) return;
+  if (!toggle || !menu || !gameOverButton || !add2048Button) return;
 
-  devMenuElements = { toggle, menu, gameOverButton };
+  devMenuElements = { toggle, menu, gameOverButton, add2048Button };
 
   const closeMenu = () => menu.classList.add("hidden");
   const toggleMenu = () => menu.classList.toggle("hidden");
@@ -843,6 +844,20 @@ function setupDevMenu() {
     gameInstance.over = true;
     gameInstance.won = false;
     gameInstance.keepPlaying = false;
+    gameInstance.actuate();
+  });
+
+  add2048Button.addEventListener("click", (event) => {
+    event.preventDefault();
+    closeMenu();
+    if (!gameInstance || gameInstance.over) return;
+    const cell = gameInstance.grid.randomAvailableCell();
+    if (!cell) return;
+    const tile = new Tile(cell, 2048);
+    gameInstance.grid.insertTile(tile);
+    if (!gameInstance.won && !gameInstance.keepPlaying) {
+      gameInstance.won = true;
+    }
     gameInstance.actuate();
   });
 }
@@ -937,8 +952,7 @@ class GameManager {
 
   // Sends the updated grid to the actuator
   actuate() {
-    const shouldRecordResult =
-      !this.resultRecorded && (this.over || (this.won && !this.keepPlaying));
+    const shouldRecordResult = !this.resultRecorded && this.over;
 
     if (shouldRecordResult) {
       this.resultRecorded = true;
