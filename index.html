@@ -138,22 +138,22 @@
                 </button>
             </div>
             <div class="settings-row">
-                <span class="ui-title" style="font-size:16px;">Theme</span>
+                <span class="ui-title settings-title">Theme</span>
                 <label class="ui-toggle">
                     <input type="checkbox" id="theme-toggle">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="settings-row">
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span class="ui-title" style="font-size:16px;">PWA Update</span>
+                <div class="settings-stack">
+                    <span class="ui-title settings-title">PWA Update</span>
                     <span class="ui-caption">Force reload to pick up latest cached assets.</span>
                 </div>
                 <button id="pwa-refresh" class="ui-button secondary small">Refresh</button>
             </div>
-            <div class="settings-row" style="flex-direction:column; align-items:flex-start; gap:10px;">
-                <span class="ui-title" style="font-size:16px;">Dev Tools</span>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div class="settings-row settings-row-column">
+                <span class="ui-title settings-title">Dev Tools</span>
+                <div class="settings-button-row">
                     <button id="dev-game-over" class="ui-button secondary small">Force Game Over</button>
                     <button id="dev-add-2048" class="ui-button secondary small">Add 2048 Tile</button>
                 </div>

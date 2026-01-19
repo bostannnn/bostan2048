@@ -20,6 +20,25 @@ and link here.
 - City rendering is currently in `city/src/CityScene.js` (legacy), with plans to
   move into `src/games/city/` when modularized.
 
+## Runtime Contracts
+- Globals (`window.*`):
+  - `window.AppBus`, `window.EconomyManager`
+  - `window.FirebaseManager`, `window.firebaseConfig`
+  - `window.openLeaderboard`
+  - `window.PIXI`
+  - `window.effectManager`
+  - `window.CustomImages`, `window.customImageAvailability`
+- Storage keys (localStorage):
+  - `arcadeCityCoins`, `arcadeCityRunProgress`, `arcadeCityInventory`
+  - `arcadeCityTheme`
+  - `arcadeCityLayout`, `arcadeCityLayout:seed`
+  - `arcadeCityPlayerName`
+  - `photo2048HighScores`
+  - `bestScore`, `gameState`, `undoState`
+- Events:
+  - `game:over` (CustomEvent with `{ score, stats: { turns, undos } }`)
+  - `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
+
 ## UI / Design System
 - Visual style: Liquid Glass inspired by Apple HIG.
 - Tokens: `ui/theme.css` is the source of truth for colors, fonts, spacing, and motion.
@@ -30,6 +49,8 @@ and link here.
   reference it from game UI.
 - Prefer CSS variables and shared components for colors and spacing; avoid inline
   styles except for small, one-off layout tweaks in overlays.
+- Game-specific CSS should focus on layout, sizing, and positioning; reusable
+  visuals belong in shared components.
 
 ## Technical Stack
 - Rendering: PixiJS v8 for canvas scenes (2048 board, City), HTML/CSS for UI.
@@ -68,6 +89,16 @@ and link here.
 ## Agent Workflow
 - If new behavior or implementation contradicts this document, the agent must
   ask the user whether to update `SOURCE_OF_TRUTH.md` before proceeding.
+- Changes that add or alter UI components must update `ui/components.css` and
+  `ui/theme.css` before adjusting game UI.
+- No new globals: any new `window.*` must be documented here and in `TDD.md`.
+- No new storage keys or events unless added here with names and payloads.
+- No new dependencies without updating the Technical Stack section.
+- No direct DOM injection outside `GameInterface.mount()`; all UI entry points
+  must be registered in `app.js`.
+- Do not edit build outputs (`dist/`) or third-party dependencies (`node_modules/`).
+- When changing runtime behavior, update `README.md`, `TDD.md`, and `roadmap.md`
+  in the same session.
 
 ## Known Legacy Files
 - `manifest.json` is legacy and not used when VitePWA is the manifest source.

@@ -41,6 +41,27 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 *   `isHighScore(score)`: Determines if an entry should prompt the save form.
 *   Storage keys: defaults to `photo2048HighScores` for the 2048 cartridge.
 
+## 2.5 Runtime Contracts
+Globals (`window.*`):
+*   `window.AppBus`, `window.EconomyManager`
+*   `window.FirebaseManager`, `window.firebaseConfig`
+*   `window.openLeaderboard`
+*   `window.PIXI`
+*   `window.effectManager`
+*   `window.CustomImages`, `window.customImageAvailability`
+
+Storage keys (localStorage):
+*   `arcadeCityCoins`, `arcadeCityRunProgress`, `arcadeCityInventory`
+*   `arcadeCityTheme`
+*   `arcadeCityLayout`, `arcadeCityLayout:seed`
+*   `arcadeCityPlayerName`
+*   `photo2048HighScores`
+*   `bestScore`, `gameState`, `undoState`
+
+Events:
+*   `game:over` (CustomEvent with `{ score, stats: { turns, undos } }`)
+*   `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
+
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
 *   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
