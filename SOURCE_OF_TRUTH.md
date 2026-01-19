@@ -10,7 +10,7 @@ and link here.
 - Games menu and shop view exist in the UI, but only 2048 is meant for users.
 - Bottom navigation and coins chip are currently hidden to gate unfinished flows.
 - Settings live in the settings overlay (theme toggle, PWA refresh, dev tools).
-- Leaderboards work locally and optionally sync to Firebase when configured.
+- Leaderboards work locally and sync to Firebase using the configured project.
 
 ## Architecture (ES Modules)
 - `app.js` is the shell: routing, lifecycle (`mount`, `start`, `pause`, `resume`),
@@ -22,11 +22,20 @@ and link here.
 
 ## UI / Design System
 - Visual style: Liquid Glass inspired by Apple HIG.
-- Tokens: `ui/theme.css`.
-- Shared components: `ui/components.css` (glass panels, pills, buttons, lists).
-- Prefer CSS variables and shared components for colors and spacing.
-- Inline styles are allowed only for small layout tweaks in overlays; prefer CSS
-  classes for any reusable styling.
+- Tokens: `ui/theme.css` is the source of truth for colors, fonts, spacing, and motion.
+- Shared components: `ui/components.css` is the source of truth for reusable UI
+  building blocks (glass panels, pills, buttons, lists, inputs, overlays).
+- Games must not create new buttons or custom UI components. If a new component
+  is needed, add it to `ui/components.css` (and tokens to `ui/theme.css`), then
+  reference it from game UI.
+- Prefer CSS variables and shared components for colors and spacing; avoid inline
+  styles except for small, one-off layout tweaks in overlays.
+
+## Technical Stack
+- Rendering: PixiJS v8 for canvas scenes (2048 board, City), HTML/CSS for UI.
+- Animation: PixiJS-driven tweens for board motion, CSS animations/transitions for
+  UI; GSAP is reserved for complex sequences (e.g., Match-3) when introduced.
+- Audio: Howler.js is the planned audio system (not yet integrated).
 
 ## Input & Interaction
 - 2048 uses pointer events on `.game-stage` with `touch-action: none` so swipes
@@ -51,12 +60,14 @@ and link here.
 - Build outputs include `manifest.webmanifest`, `registerSW.js`, and `sw.js`.
 
 ## Firebase (Optional)
-- If `window.firebaseConfig` is present, Firebase loads from CDN and leaderboards
-  sync to Firestore.
-- If Firebase is missing or offline, the UI falls back to local scores.
+- Firebase is configured in `index.html` via `window.firebaseConfig` and loads
+  from the CDN; leaderboards sync to Firestore when online.
+- If Firebase is offline, the UI falls back to local scores.
 - Firestore requires a composite index: `gameId (ASC)` + `score (DESC)`.
+
+## Agent Workflow
+- If new behavior or implementation contradicts this document, the agent must
+  ask the user whether to update `SOURCE_OF_TRUTH.md` before proceeding.
 
 ## Known Legacy Files
 - `manifest.json` is legacy and not used when VitePWA is the manifest source.
-- `design_rules.md` and `GDD.md` are historical references; they should not
-  override this document.
