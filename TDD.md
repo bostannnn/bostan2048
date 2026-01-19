@@ -49,6 +49,7 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 
 ## 3.5 UI Component Guidelines
 - Prefer the shared button variants: ui-button (primary), ui-button secondary (glass), ui-button gold (gold CTA), and ui-button mini secondary (44px circular icon chips).
+- Do not introduce bespoke UI components inside game styles; add new components to `ui/components.css` and tokens to `ui/theme.css`.
 - Reuse the 2048 score chip markup (.score-container with .score-label and .score-value) to maintain sizing and alignment across themes.
 - For leaderboards, use the .leader-card structure with .lb-rank, .lb-player (name + date), .lb-score, and .lb-stat-stack for stats (undos/turns). Add stats by extending the stack instead of altering the layout.
 
@@ -58,7 +59,7 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 * **Haptics:** `navigator.vibrate()` is not wired yet; future work may route haptics through `GameInterface`.
 
 ## 4. Firebase / Leaderboards
-*   Config: provide `window.firebaseConfig` or call `window.FirebaseManager.configure(config)` to enable Firestore-backed leaderboards.
+*   Config: `window.firebaseConfig` is defined in `index.html` and loaded before `app.js`; replace with your project keys as needed.
 *   Transport: `FirebaseManager` loads Firebase from the CDN to avoid bundling dependencies.
 *   Fallback: If Firebase is absent/offline, leaderboard reads/writes remain local only.
 *   Stored fields: `name`, `score`, `turns`, `undos`, `timestamp`.

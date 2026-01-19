@@ -34,7 +34,7 @@ This project uses ES Modules, which requires a local web server to run.
 
 The UI uses a Liquid Glass aesthetic inspired by iOS with soft aurora backdrops.
 *   **Tokens:** Defined in `ui/theme.css` (system colors, aurora gradients, motion durations).
-*   **Components:** `ui/components.css` contains `glass-panel`, `glass-pill`, `ui-button`, focus-visible states.
+*   **Components:** `ui/components.css` is the reusable UI source of truth (buttons, panels, lists, inputs).
 *   **Motion:** `--motion-*` tokens drive subtle float/drift animations; respects `prefers-reduced-motion`.
 *   **Dark Mode:** Supported via automatic system preference and a manual toggle in the settings overlay.
 
@@ -72,12 +72,11 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   The 2048 board renders via PixiJS v8 while header/overlays remain HTML.
 
 ## Firebase Integration (Leaderboards)
-To enable online leaderboards:
-1.  Create a project at [console.firebase.google.com](https://console.firebase.google.com/).
-2.  Set `window.firebaseConfig = { ... }` before `app.js` runs (or call `window.FirebaseManager.configure(config);` after load).
-3.  `FirebaseManager` pulls Firebase from the CDN, then `LeaderboardManager` will read/write to Firestore.
-4.  If Firebase is unavailable, the UI automatically falls back to local scores.
-5.  Firestore index: the query `where gameId == "2048"` + `orderBy score desc` needs a composite index. If you see "requires an index" in the console, follow the provided link or create one with fields `gameId` (ASC) and `score` (DESC) on the `leaderboards` collection.
+Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.
+1.  Replace the config values with your Firebase project keys if needed.
+2.  `FirebaseManager` pulls Firebase from the CDN, then `LeaderboardManager` will read/write to Firestore.
+3.  If Firebase is unavailable, the UI automatically falls back to local scores.
+4.  Firestore index: the query `where gameId == "2048"` + `orderBy score desc` needs a composite index. If you see "requires an index" in the console, follow the provided link or create one with fields `gameId` (ASC) and `score` (DESC) on the `leaderboards` collection.
 
 ## Technical Docs
 See `SOURCE_OF_TRUTH.md` for the canonical spec, with `TDD.md` and `roadmap.md` kept in sync as summaries.
