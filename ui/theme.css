@@ -1,0 +1,95 @@
+:root {
+  /* Fonts */
+  --ui-font: -apple-system, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ui-font-display: -apple-system, "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Apple HIG Colors - Light Mode Default */
+  --system-blue: #007AFF;
+  --gold-base: #f9b233;
+  --gold-bright: #ffcc5c;
+  --gold-shadow: rgba(249, 178, 51, 0.35);
+  --system-green: #34C759;
+  --system-indigo: #5856D6;
+  --system-orange: #FF9500;
+  --system-pink: #FF2D55;
+  --system-purple: #AF52DE;
+  --system-red: #FF3B30;
+  --system-teal: #5AC8FA;
+  --system-yellow: #FFCC00;
+  --system-gray: #8E8E93;
+  --system-gray2: #AEAEB2;
+  --system-gray3: #C7C7CC;
+  --system-gray4: #D1D1D6;
+  --system-gray5: #E5E5EA;
+  --system-gray6: #F2F2F7;
+
+  /* Semantic Colors */
+  --ui-bg-base: #FFFFFF;
+  --ui-bg-secondary: #F2F2F7;
+  --ui-text-primary: #000000;
+  --ui-text-secondary: #8E8E93; /* Label Color */
+  --ui-text-tertiary: #C7C7CC;
+  --ui-separator: #C6C6C8;
+  
+  /* Refined Accent - Classic Apple Blue (Solid) */
+  --ui-accent: var(--gold-base);
+  --ui-accent-gradient: linear-gradient(145deg, var(--gold-bright), var(--gold-base));
+  --ui-accent-highlight: rgba(249, 178, 51, 0.18);
+  
+  /* Materials (Liquid Glass) - Softer */
+  --material-ultra-thin: rgba(255, 255, 255, 0.48);
+  --material-thin: rgba(255, 255, 255, 0.70);
+  --material-regular: rgba(255, 255, 255, 0.82);
+  --material-thick: rgba(255, 255, 255, 0.94);
+  
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.45);
+
+  /* Background Gradient & Aurora accents */
+  --ui-bg-gradient: radial-gradient(120% 120% at 20% 20%, rgba(0, 122, 255, 0.16) 0%, rgba(0, 122, 255, 0) 50%),
+                    radial-gradient(120% 120% at 80% 0%, rgba(255, 45, 85, 0.12) 0%, rgba(255, 45, 85, 0) 45%),
+                    linear-gradient(135deg, #f6f7fb 0%, #d9e1f2 50%, #f5f7fa 100%);
+  --ui-aurora-1: rgba(0, 122, 255, 0.16);
+  --ui-aurora-2: rgba(255, 45, 85, 0.12);
+
+  /* Metrics */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 9999px;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* Motion */
+  --motion-fast: 150ms;
+  --motion-medium: 260ms;
+  --motion-slow: 480ms;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+    --ui-bg-base: #000000;
+    --ui-bg-secondary: #1C1C1E;
+    --ui-text-primary: #FFFFFF;
+    --ui-text-secondary: #8E8E93;
+    --ui-text-tertiary: #48484A;
+    --ui-separator: #38383A;
+
+    --ui-bg-gradient: linear-gradient(135deg, #000000 0%, #1C1C1E 100%);
+    --ui-aurora-1: rgba(90, 200, 250, 0.14);
+    --ui-aurora-2: rgba(175, 82, 222, 0.12);
+
+    /* Apple Dark Mode Translucency Bases */
+    --material-ultra-thin: rgba(30, 30, 30, 0.48);
+    --material-thin: rgba(30, 30, 30, 0.70);
+    --material-regular: rgba(30, 30, 30, 0.82);
+    --material-thick: rgba(28, 28, 30, 0.94); /* System Gray 6 equivalent */
+    
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}

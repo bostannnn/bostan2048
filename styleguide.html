@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade City // Theme Comparison</title>
+    
+    <link rel="stylesheet" href="./ui/theme.css">
+    <link rel="stylesheet" href="./ui/components.css">
+    
+    <style>
+        /* --- LAYOUT & UTILITIES --- */
+        body { margin: 0; padding: 0; font-family: sans-serif; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* The Split Container */
+        .split-view {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Common Styles for both sides */
+        .theme-pane {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+            /* Apply the theme variables to the container background */
+            background: var(--ui-bg-base);
+            background-image: var(--ui-bg-gradient);
+            color: var(--ui-text-primary);
+        }
+
+        /* --- THE MAGIC TRICK --- 
+           We manually apply your Dark Mode variables to this specific class
+           so it renders 'Dark' even though the <body> is technically Light.
+        */
+        .theme-pane.dark-forced {
+            --ui-bg-base: #000000;
+            --ui-bg-secondary: #1C1C1E;
+            --ui-text-primary: #FFFFFF;
+            --ui-text-secondary: #8E8E93;
+            --ui-text-tertiary: #48484A;
+            --ui-separator: #38383A;
+            --ui-bg-gradient: linear-gradient(135deg, #000000 0%, #1C1C1E 100%);
+            
+            /* Materials */
+            --material-ultra-thin: rgba(30, 30, 30, 0.48);
+            --material-thin: rgba(30, 30, 30, 0.70);
+            --material-regular: rgba(30, 30, 30, 0.82);
+            --material-thick: rgba(28, 28, 30, 0.94);
+            
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            
+            /* Apply the override to the button text color in dark mode context */
+            --ui-button-text: #FFF; 
+        }
+
+        /* Section Styling */
+        section { margin-bottom: 60px; border-bottom: 1px solid var(--ui-separator); padding-bottom: 30px; }
+        h2 { 
+            font-family: var(--ui-font-display); 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            opacity: 0.6; 
+            font-size: 14px; 
+            margin-bottom: 24px;
+        }
+
+        /* Component Grid */
+        .grid { display: grid; gap: 24px; align-items: start; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+        
+        .label {
+            display: block; margin-top: 12px; font-size: 11px; font-family: monospace; opacity: 0.5;
+        }
+
+        /* Header for the Pane */
+        .pane-header {
+            font-size: 32px; font-weight: 800; margin-bottom: 8px; font-family: var(--ui-font-display);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="split-view">
+        
+        <div class="theme-pane">
+            <div class="pane-header">Light Mode</div>
+            <p class="text-body-sm" style="margin-bottom: 40px;">Standard daylight presentation.</p>
+
+            <div id="light-content"></div>
+        </div>
+
+        <div class="theme-pane dark-forced">
+            <div class="pane-header">Dark Mode</div>
+            <p class="text-body-sm" style="margin-bottom: 40px;">Aurora night presentation.</p>
+
+            <div id="dark-content"></div>
+        </div>
+
+    </div>
+
+    <template id="component-template">
+        
+        <section>
+            <h2>Buttons</h2>
+            <div class="grid">
+                <div>
+                    <button class="ui-button gold">Start</button>
+                    <span class="label">.gold</span>
+                </div>
+                <div>
+                    <button class="ui-button secondary">Settings</button>
+                    <span class="label">.secondary</span>
+                </div>
+                <div>
+                    <button class="ui-button mini secondary">🔔</button>
+                    <span class="label">.mini</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Glass Panels</h2>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                
+                <div class="glass-panel" style="padding: 24px;">
+                    <h3 class="ui-title" style="font-size: 20px; margin-bottom: 8px;">Main Menu</h3>
+                    <p class="text-body">The glass panel adapts to the background luminosity automatically.</p>
+                </div>
+
+                <div class="ui-list">
+                    <div class="ui-list-item">
+                        <span class="text-body">Sound Effects</span>
+                        <label class="ui-toggle">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="ui-list-item">
+                        <span class="text-body">Notifications</span>
+                        <label class="ui-toggle">
+                            <input type="checkbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section>
+            <h2>Typography</h2>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <h1 class="text-hero">Hero Title</h1>
+                <p class="text-body">This is standard body text. It should have high contrast in Light Mode and slightly softer white in Dark Mode.</p>
+                <span class="text-body-sm">Secondary / Caption text</span>
+            </div>
+        </section>
+
+        <section>
+            <h2>Inputs</h2>
+            <div class="grid">
+                <input type="text" placeholder="Username...">
+                <div class="glass-pill" style="padding: 8px 16px; display: inline-flex;">
+                    <span>🪙 1,040</span>
+                </div>
+            </div>
+        </section>
+
+    </template>
+
+    <script>
+        // This script takes the template above and clones it into both left and right sides
+        // So you only have to write the HTML once.
+        const template = document.getElementById('component-template');
+        const lightContainer = document.getElementById('light-content');
+        const darkContainer = document.getElementById('dark-content');
+
+        lightContainer.appendChild(template.content.cloneNode(true));
+        darkContainer.appendChild(template.content.cloneNode(true));
+    </script>
+</body>
+</html>

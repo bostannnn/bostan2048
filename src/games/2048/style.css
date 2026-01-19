@@ -1,0 +1,241 @@
+/* 2048 Game Specific Styles */
+
+#view-2048.view {
+  padding: 8px 0 72px;
+  max-width: 100%;
+  width: 100vw;
+  align-items: center;
+}
+
+.game-container {
+  /* Square board sizing logic */
+  --board-span: clamp(340px, min(96vw, 70vh), 660px);
+  --field-base: var(--board-span);
+  --field-width: min(var(--field-base), 96vw);
+  --grid-spacing: calc(var(--field-width) * 0.025);
+  --grid-row-cells: 4;
+  --tile-size: calc((var(--field-width) - (var(--grid-spacing) * (var(--grid-row-cells) + 1))) / var(--grid-row-cells));
+  --tile-radius: calc(var(--tile-size) * 0.1);
+  
+  margin: 0 auto;
+  width: var(--field-width);
+  max-width: var(--field-width);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  
+  /* Layout */
+  position: relative;
+  padding: 0;
+  box-sizing: border-box;
+  touch-action: none;
+  overflow: hidden;
+  
+  /* Visuals - Inherits Glass variables, but specific to board */
+  background: linear-gradient(160deg, rgba(255,255,255,0.9), rgba(255,255,255,0.82));
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+.dark-mode .game-container {
+  background: linear-gradient(160deg, rgba(24,24,28,0.92), rgba(16,16,18,0.88));
+  box-shadow: 0 18px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.container {
+  --board-span: clamp(340px, min(96vw, 82vh), 660px);
+  width: 100vw;
+  max-width: 100vw;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 24px;
+  min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+
+.game-stage {
+  /* ... keep existing vars ... */
+  display: flex;
+  
+  align-items: flex-start;
+  
+  justify-content: center;
+  flex: 1;
+  width: 100%
+
+  padding-top: 4vh; 
+  padding-bottom: 0;
+}
+
+/* Header Grid Layout */
+header {
+  display: grid;
+  grid-template-columns: 1fr auto; 
+  gap: 12px;
+  width: 100%;
+  max-width: min(900px, 94vw, var(--board-span));
+  padding: 12px 14px;
+}
+
+h1 {
+  /* Using your text utility class would be better, but this is fine specific override */
+  font-family: var(--ui-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1;
+  color: var(--ui-text-primary);
+  align-self: center;
+}
+
+.scores {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.header-buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Button overrides specific to header layout */
+.header-buttons .ui-button { width: auto; }
+.header-buttons .ui-button:not(.mini) { min-width: 110px; }
+.header-spacer { flex: 1; }
+
+/* Score Containers - Now just layout helpers for .glass-pill */
+.score-container, .best-container, .currency-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 96px;
+  min-height: 50px;
+  padding: 6px 10px;
+  line-height: 1.1;
+  flex: 1;
+  /* Critical for floating +4 animation */
+  position: relative;
+}
+
+.score-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ui-text-secondary); /* Use var! */
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.score-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ui-text-primary);
+  line-height: 1.1;
+}
+
+.currency-container { display: none; }
+
+/* --- GRID & TILES --- */
+.game-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 120% at 20% 20%, rgba(0, 122, 255, 0.1), transparent 60%),
+              radial-gradient(120% 120% at 80% 0%, rgba(255, 45, 85, 0.08), transparent 55%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pixi-board {
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+/* Game Message Overlay */
+.game-message {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--material-thick);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 16px;
+  padding: 24px;
+  animation: fade-in 0.3s ease;
+}
+
+.game-message.game-won, .game-message.game-over { display: flex; }
+
+.game-message p { 
+  font-size: 38px; 
+  font-weight: 800; 
+  margin: 0 0 32px 0; 
+  color: var(--ui-text-primary);
+}
+
+.game-message .ui-button {
+  width: 100%;
+  max-width: 260px;
+  height: 50px;
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 640px) {
+  header {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+    justify-items: center;
+    text-align: center;
+    max-width: 100%;
+  }
+  h1 { font-size: 32px; }
+  .scores { width: 100%; justify-content: center; }
+  .header-buttons { display: flex; gap: 8px; }
+  .game-container {
+    --board-span: min(96vw, 72vh);
+  }
+}
+
+/* --- SCORE POPUPS (Global) --- */
+.score-addition {
+  position: absolute;
+  top: 10px; /* adjusted to sit inside the box */
+  right: 10px;
+  color: var(--ui-accent); /* Gold color */
+  font-size: 16px;
+  font-weight: 800;
+  opacity: 0;
+  z-index: 50;
+  pointer-events: none; /* Let clicks pass through */
+  animation: float-up 600ms ease-out forwards;
+}
+
+@keyframes float-up {
+  0% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateY(-25px) scale(1.2); 
+  }
+}
