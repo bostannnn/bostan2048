@@ -14,7 +14,7 @@
 #view-2048.view {
   padding: 8px 0 72px;
   max-width: 100%;
-  width: 100%; /* CHANGED: 100vw -> 100% to stop horizontal scroll */
+  width: 100%;
   align-items: center;
   overflow-x: hidden; /* Safety net */
 }
@@ -23,7 +23,8 @@
   /* Board sizing */
   --board-span: clamp(340px, min(96vw, 70vh), 660px);
   
-  width: 100%; /* CHANGED: 100vw -> 100% */
+  width: 100%; 
+  height: auto;
   max-width: 100%;
   margin: 0 auto;
   display: flex;
