@@ -3,6 +3,7 @@ import { CityScene } from './city/src/CityScene.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
 import * as PIXI from 'pixi.js';
 window.PIXI = PIXI;
+import '/core.js';
 
 (function () {
   "use strict";

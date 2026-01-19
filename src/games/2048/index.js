@@ -86,10 +86,10 @@ async mount(container) {
         }
     }
 
-    start() {
+start() {
+        // Ensure EffectManager is available globally
         if (!window.effectManager) {
-    window.effectManager = new EffectManager(".game-container");
-};
+            window.effectManager = new EffectManager(".game-container");
         } else {
             window.effectManager.resize();
         }
