@@ -12,11 +12,12 @@
 
 /* --- 1. VIEW LAYOUT --- */
 #view-2048.view {
-  padding: 8px 0 72px;
+  padding: 8px 0 0;
   max-width: 100%;
   width: 100%;
   align-items: center;
   overflow-x: hidden; /* Safety net */
+  flex: 1;
 }
 
 .container {
@@ -26,6 +27,7 @@
   width: 100%; 
   height: auto;
   max-width: 100%;
+  flex: 1;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -41,7 +43,7 @@
   flex: 1;
   width: 100%;
   padding-top: 24px; 
-  padding-bottom: 0;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
   touch-action: none;
 }
 
@@ -65,8 +67,7 @@
   margin: 0 auto;
   width: var(--field-width);
   max-width: var(--field-width);
-  aspect-ratio: 1 / 1;
-  height: auto;
+  height: var(--field-width);
   
   /* Layout */
   position: relative;

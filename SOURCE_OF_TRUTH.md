@@ -1,5 +1,7 @@
 # Arcade City - Source of Truth
 
+Doc version: 1.0
+
 This document is the canonical spec for the project. If any other document or UI
 behavior conflicts with this file, this file wins. Other docs should summarize
 and link here.
@@ -96,9 +98,16 @@ and link here.
 - No new dependencies without updating the Technical Stack section.
 - No direct DOM injection outside `GameInterface.mount()`; all UI entry points
   must be registered in `app.js`.
+- Any breaking change must increment the Doc version in this file.
 - Do not edit build outputs (`dist/`) or third-party dependencies (`node_modules/`).
 - When changing runtime behavior, update `README.md`, `TDD.md`, and `roadmap.md`
   in the same session.
+
+## UI Audit Checklist
+- Tokens only (use `ui/theme.css` variables).
+- Components only (use `ui/components.css` building blocks).
+- No inline styles (except explicitly approved one-offs).
+- No new classes without user approval.
 
 ## Known Legacy Files
 - `manifest.json` is legacy and not used when VitePWA is the manifest source.

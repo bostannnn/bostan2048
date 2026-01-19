@@ -89,4 +89,4 @@ Events:
 ## 5. UI State (Current)
 *   Active surface: 2048 only. Bottom navigation is hidden; coins UI is suppressed until the economy/city/shop flows are production-ready.
 *   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
-*   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the space beneath the board) interactive without blocking header buttons.
+*   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
