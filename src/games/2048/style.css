@@ -16,6 +16,11 @@
   --grid-row-cells: 4;
   --tile-size: calc((var(--field-width) - (var(--grid-spacing) * (var(--grid-row-cells) + 1))) / var(--grid-row-cells));
   --tile-radius: calc(var(--tile-size) * 0.1);
+  -webkit-user-select: none; /* Safari / Chrome */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+  user-select: none;         /* Standard */
+  -webkit-touch-callout: none; /* iOS Safari system menu */
   
   margin: 0 auto;
   width: var(--field-width);

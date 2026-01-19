@@ -109,12 +109,19 @@ export class PixiBoardRenderer {
     this.refreshTileValue(value);
   }
 
-  resize() {
+resize() {
     if (!this.hostEl) return;
+    
+    // 1. Get the exact CSS pixels
     const width = this.hostEl.clientWidth;
     const height = this.hostEl.clientHeight;
+    
     if (!width || !height) return;
 
+    // 2. Tell Pixi to match this size exactly (Prevents stretching)
+    this.app.renderer.resize(width, height);
+
+    // 3. Recalculate grid metrics
     const boardSize = Math.min(width, height);
     const spacing = Math.max(6, Math.round(boardSize * 0.025));
     const tileSize = Math.floor((boardSize - spacing * (this.size + 1)) / this.size);
@@ -123,14 +130,7 @@ export class PixiBoardRenderer {
     const offsetY = (height - actualBoard) / 2;
     const radius = Math.max(6, Math.round(tileSize * 0.1));
 
-    this.metrics = {
-      tileSize,
-      spacing,
-      offsetX,
-      offsetY,
-      boardSize: actualBoard,
-      radius,
-    };
+    this.metrics = { tileSize, spacing, offsetX, offsetY, boardSize: actualBoard, radius };
 
     this.drawBackground();
     this.refreshTiles();

@@ -34,10 +34,27 @@ export class LocalStorageManager {
   }
 
   setGameState(gameState) {
-    this.storage.setItem(this.gameStateKey, JSON.stringify(gameState));
+    // 1. Clear any pending save (resets the 500ms timer)
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+    }
+
+    // 2. Wait 500ms. If no new moves happen, THEN save to disk.
+    this.saveTimeout = setTimeout(() => {
+      this.storage.setItem(this.gameStateKey, JSON.stringify(gameState));
+    }, 500);
   }
 
-  clearGameState() {
+clearGameState() {
+    // 1. Cancel the pending save! 
+    // Otherwise, the timer from your last move might fire AFTER game over, 
+    // reviving the dead game.
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+
+    // 2. Delete the save
     this.storage.removeItem(this.gameStateKey);
   }
 
