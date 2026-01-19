@@ -1,6 +1,8 @@
 import { Photo2048 } from './src/games/2048/index.js';
 import { CityScene } from './city/src/CityScene.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
+import * as PIXI from 'pixi.js';
+window.PIXI = PIXI;
 
 (function () {
   "use strict";

@@ -4,6 +4,7 @@ import { KeyboardInputManager } from './components/KeyboardInputManager.js';
 import { PixiActuator } from './components/PixiActuator.js';
 import { LocalStorageManager } from './components/LocalStorageManager.js';
 import { PixiBoardRenderer } from './components/PixiBoardRenderer.js';
+import { EffectManager } from './components/EffectManager.js';
 
 const ECONOMY_GAME_ID = "2048";
 const GAME_OVER_QUOTES = [ /* Keep your existing quotes if you want, omitted for brevity */ ];
@@ -87,7 +88,8 @@ async mount(container) {
 
     start() {
         if (!window.effectManager) {
-            window.effectManager = new EffectManager(".game-container");
+    window.effectManager = new EffectManager(".game-container");
+};
         } else {
             window.effectManager.resize();
         }
