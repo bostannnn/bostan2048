@@ -21,7 +21,8 @@
   },
   "homepage": "https://github.com/bostannnn/bostan2048#readme",
   "devDependencies": {
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vite-plugin-pwa": "^0.21.1"
   },
   "dependencies": {
     "pixi.js": "^8.15.0"
