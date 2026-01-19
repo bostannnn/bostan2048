@@ -69,6 +69,7 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   2048 is the only intended playable cartridge; the bottom nav and coins chip are intentionally hidden.
 *   Settings are accessible via the settings overlay (theme toggle, PWA refresh, dev tools).
 *   Mobile swipes are handled with pointer events on a full-height `.game-stage` surface (`touch-action: none`), keeping the bottom padding inside the stage so the space below the board still registers moves while header buttons remain tappable.
+*   The 2048 view locks app scrolling and suppresses accidental tap highlights/text selection; text input remains selectable in overlays.
 *   The 2048 board renders via PixiJS v8 while header/overlays remain HTML.
 
 ## Firebase Integration (Leaderboards)

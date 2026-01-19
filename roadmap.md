@@ -25,7 +25,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Basic coin tracking (local-only).
 - [x] UI polish (Liquid Glass styling, dark mode).
 - [x] Leaderboard UI (local saves + name capture).
-- [x] Input polish (full-height swipe surface on `.game-stage`, with bottom padding inside the swipe area).
+- [x] Input polish (full-height swipe surface on `.game-stage`, with bottom padding inside the swipe area; scroll/selection suppression in the 2048 view).
 - [ ] Shop wiring (catalog + inventory persistence).
 - [x] Cloud leaderboards (Firebase configured + local fallback).
 - [ ] Firestore composite index for leaderboards (if not created yet).

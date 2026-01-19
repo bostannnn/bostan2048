@@ -50,6 +50,8 @@ export class PixiBoardRenderer {
     await this.app.init({
       backgroundAlpha: 0,
       antialias: true,
+      autoDensity: true,
+      resolution: Math.max(1, window.devicePixelRatio || 1),
       resizeTo: this.hostEl,
     });
 

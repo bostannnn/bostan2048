@@ -65,7 +65,7 @@ Events:
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
 *   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
-*   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI; Match-3 planned for PixiJS.
+*   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI; Match-3 planned for PixiJS. Pixi renders with auto-density at device pixel ratio to keep tile portraits crisp.
 *   **Liquid Glass:** `ui/theme.css` carries aurora gradients + `--motion-*` tokens; `ui/components.css` provides glass cards/pills and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
 
 ## 3.5 UI Component Guidelines
@@ -90,3 +90,4 @@ Events:
 *   Active surface: 2048 only. Bottom navigation is hidden; coins UI is suppressed until the economy/city/shop flows are production-ready.
 *   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
+*   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).

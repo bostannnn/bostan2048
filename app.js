@@ -33,6 +33,7 @@ import '/core.js';
   };
 
   function showView(viewId) {
+    document.body.dataset.view = viewId;
     Object.keys(views).forEach((id) => {
       views[id].classList.toggle("hidden", id !== viewId);
     });
