@@ -34,6 +34,9 @@ This project uses ES Modules, which requires a local web server to run.
 
 The UI uses a Liquid Glass aesthetic inspired by iOS with soft aurora backdrops.
 *   **Tokens:** Defined in `ui/theme.css` (system colors, aurora gradients, motion durations).
+*   **Spacing:** `--ui-space-*` tokens in `ui/theme.css` provide standardized margins/gaps.
+*   **Overlays:** `ui/components.css` includes `.overlay-centered` and helper classes for centered overlay headers/actions.
+*   **Leaderboards:** List, card, entry, status, hero score, and input styles live in `ui/components.css`.
 *   **Components:** `ui/components.css` is the reusable UI source of truth (buttons, panels, lists, inputs).
 *   **Motion:** `--motion-*` tokens drive subtle float/drift animations; respects `prefers-reduced-motion`.
 *   **Dark Mode:** Supported via automatic system preference and a manual toggle in the settings overlay.
@@ -63,13 +66,16 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   Local scores live in `photo2048HighScores` (names cached in `arcadeCityPlayerName`).
 *   Each entry saves `score`, `turns`, and `undos`.
 *   2048 dispatches `game:over` with `{ score, stats }`; `app.js` opens the glass sheet to capture/save.
-*   The Scores button in the 2048 header opens the sheet; it shows "Live Firebase board" when cloud sync is active.
+*   The Scores button in the 2048 header opens the sheet.
+*   The leaderboard sheet shows the top 10 and scrolls within the list area (scrollbar hidden).
+*   The leaderboard overlay centers titles/actions and highlights the pending score as a hero value.
 
 ## Current Scope
 *   2048 is the only intended playable cartridge; the bottom nav and coins chip are intentionally hidden.
 *   Settings are accessible via the settings overlay (theme toggle, PWA refresh, dev tools).
 *   Mobile swipes are handled with pointer events on a full-height `.game-stage` surface (`touch-action: none`), keeping the bottom padding inside the stage so the space below the board still registers moves while header buttons remain tappable.
 *   The 2048 view locks app scrolling and suppresses accidental tap highlights/text selection; text input remains selectable in overlays.
+*   Starting a new 2048 game prompts a glass confirm overlay (Yes = gold button, No = secondary, no close icon).
 *   The 2048 board renders via PixiJS v8 while header/overlays remain HTML.
 
 ## Firebase Integration (Leaderboards)

@@ -20,6 +20,8 @@ export class Photo2048 extends GameInterface {
         this.currencyUnsubscribe = null;
         this.boardRenderer = null;
         this.actuator = null;
+        this.confirmHandler = null;
+        this.restartPending = false;
     }
 
 async mount(container) {
@@ -104,7 +106,7 @@ start() {
 
         this.gameInstance = new GameManager(4, KeyboardInputManager, actuator, LocalStorageManager, {
             onRestart: () => {
-                this.showThemeSelector(); 
+                this.requestRestart();
             },
             onEconomyRun: (hasState) => {
                 if (!window.EconomyManager) return;
@@ -177,6 +179,36 @@ start() {
         if (this.gameInstance) {
             this.gameInstance.reset();
         }
+    }
+
+    setConfirmHandler(handler) {
+        this.confirmHandler = handler;
+    }
+
+    requestRestart() {
+        if (this.restartPending) return;
+        const performRestart = () => {
+            this.restartPending = false;
+            this.showThemeSelector();
+        };
+        const cancelRestart = () => {
+            this.restartPending = false;
+        };
+
+        if (this.confirmHandler) {
+            this.restartPending = true;
+            this.confirmHandler({
+                title: "Start new game?",
+                message: "Your current run will be lost.",
+                confirmText: "Yes",
+                cancelText: "No",
+                onConfirm: performRestart,
+                onCancel: cancelRestart
+            });
+            return;
+        }
+
+        performRestart();
     }
 
     getTemplate() {

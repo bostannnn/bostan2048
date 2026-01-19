@@ -16,32 +16,31 @@
 
     <!-- Leaderboard Modal (Glass Sheet) -->
     <div id="leaderboard" class="overlay hidden">
-        <div class="glass-panel overlay-content">
+        <div class="glass-panel overlay-content overlay-centered">
             <div class="overlay-header">
-                <h1 id="leaderboard-title" class="ui-title">Leaderboard</h1>
-                <button id="close-leaderboard" class="ui-button icon-only secondary" aria-label="Close">
+                <h1 id="leaderboard-title" class="ui-title overlay-title">Leaderboard</h1>
+                <button id="close-leaderboard" class="ui-button icon-only secondary overlay-close" aria-label="Close">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
             </div>
-            <p id="leaderboard-hint" class="ui-caption">Local scores saved on-device. Entries show Score / Turns / Undos.</p>
+            <p id="leaderboard-hint" class="ui-caption overlay-subtitle">Local scores saved on-device. Entries show Score / Turns / Undos.</p>
             
-            <div id="leaderboard-entry" class="leaderboard-entry hidden">
-                <p class="ui-caption" id="leaderboard-pending">New High Score!</p>
-                <div class="leaderboard-form">
-                    <input id="player-name" type="text" maxlength="20" autocomplete="name" placeholder="Enter your name">
+            <div id="leaderboard-entry" class="leaderboard-entry overlay-entry hidden">
+                <div class="ui-title text-hero overlay-hero leaderboard-hero" id="leaderboard-pending">0</div>
+                <div class="leaderboard-form overlay-form">
+                    <input id="player-name" class="leaderboard-input" type="text" maxlength="20" autocomplete="name" placeholder="Enter your name">
                     <button id="save-score" class="ui-button small">Save</button>
                 </div>
             </div>
 
             <div id="leaderboard-status" class="leaderboard-status hidden"></div>
 
-            <ul id="high-score-list" class="ui-list">
+            <ul id="high-score-list" class="ui-list leaderboard-list">
                 <!-- Scores will be injected here -->
             </ul>
             
             <div class="overlay-actions">
                 <button id="leaderboard-try-again" class="ui-button small primary hidden">Try Again</button>
-                <button id="clear-leaderboard" class="ui-button secondary small">Reset Local</button>
             </div>
         </div>
     </div>
@@ -132,8 +131,8 @@
     <div id="settings-overlay" class="overlay hidden">
         <div class="glass-panel overlay-content settings-panel">
             <div class="overlay-header">
-                <h1 class="ui-title">Settings</h1>
-                <button id="close-settings" class="ui-button icon-only secondary" aria-label="Close">
+                <h1 class="ui-title overlay-title">Settings</h1>
+                <button id="close-settings" class="ui-button icon-only secondary overlay-close" aria-label="Close">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
             </div>
@@ -157,6 +156,20 @@
                     <button id="dev-game-over" class="ui-button secondary small">Force Game Over</button>
                     <button id="dev-add-2048" class="ui-button secondary small">Add 2048 Tile</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Overlay -->
+    <div id="confirm-overlay" class="overlay hidden">
+        <div class="glass-panel overlay-content overlay-centered">
+            <div class="overlay-header">
+                <h1 id="confirm-title" class="ui-title overlay-title">Start new game?</h1>
+            </div>
+            <p id="confirm-message" class="ui-caption overlay-subtitle">Your current run will be lost.</p>
+            <div class="overlay-actions">
+                <button id="confirm-no" class="ui-button secondary">No</button>
+                <button id="confirm-yes" class="ui-button gold">Yes</button>
             </div>
         </div>
     </div>

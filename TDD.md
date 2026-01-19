@@ -66,7 +66,7 @@ Events:
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
 *   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
 *   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI; Match-3 planned for PixiJS. Pixi renders with auto-density at device pixel ratio to keep tile portraits crisp.
-*   **Liquid Glass:** `ui/theme.css` carries aurora gradients + `--motion-*` tokens; `ui/components.css` provides glass cards/pills and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
+*   **Liquid Glass:** `ui/theme.css` carries aurora gradients plus `--motion-*` and `--ui-space-*` tokens; `ui/components.css` provides glass cards/pills, overlay helpers (`.overlay-centered`, `.overlay-title`, `.overlay-subtitle`, `.overlay-actions`, `.overlay-form`), leaderboard components (`.leaderboard-list`, `.leader-card`, `.leaderboard-entry`, `.leaderboard-status`, `.leaderboard-hero`, `.leaderboard-input`), and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
 
 ## 3.5 UI Component Guidelines
 - Prefer the shared button variants: ui-button (primary), ui-button secondary (glass), ui-button gold (gold CTA), and ui-button mini secondary (44px circular icon chips).
@@ -85,9 +85,11 @@ Events:
 *   Fallback: If Firebase is absent/offline, leaderboard reads/writes remain local only.
 *   Stored fields: `name`, `score`, `turns`, `undos`, `timestamp`.
 *   Index: Firestore requires a composite index on `leaderboards` for `gameId (ASC)` + `score (DESC)` to satisfy the cloud query; the console will link to create it if missing.
+*   UI: The leaderboard sheet renders the top 10 entries in a scrollable list (scrollbar hidden) with centered titles/actions, a hero pending-score display, and no hint line.
 
 ## 5. UI State (Current)
 *   Active surface: 2048 only. Bottom navigation is hidden; coins UI is suppressed until the economy/city/shop flows are production-ready.
 *   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).
+*   Restart: the New Game action opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.

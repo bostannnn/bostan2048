@@ -374,7 +374,6 @@ import '/core.js';
     const overlay = document.getElementById("leaderboard");
     const titleEl = document.getElementById("leaderboard-title");
     const closeBtn = document.getElementById("close-leaderboard");
-    const clearBtn = document.getElementById("clear-leaderboard");
     const saveBtn = document.getElementById("save-score");
     const nameInput = document.getElementById("player-name");
     const entry = document.getElementById("leaderboard-entry");
@@ -417,23 +416,12 @@ import '/core.js';
     async function renderLeaderboard() {
       const list = document.getElementById("high-score-list");
       if (!list) return;
-      const { local, remote } = await leaderboardManager.fetchScores(10);
+      const maxRows = 10;
+      const { local, remote } = await leaderboardManager.fetchScores(maxRows);
       const hasFirebase = !!(window.FirebaseManager && window.FirebaseManager.enabled);
       const indexRequired = !!(window.FirebaseManager && window.FirebaseManager.indexRequired);
       const hasRemote = Array.isArray(remote) && remote.length > 0;
-      const rows = hasFirebase && hasRemote ? remote : local;
-
-      if (hint && currentMode === "default") {
-        if (indexRequired) {
-          hint.textContent = "Firebase connected. Create the leaderboard composite index to sync cloud scores.";
-        } else if (hasFirebase && hasRemote) {
-          hint.textContent = "Live Firebase board. Falls back to local if offline.";
-        } else if (hasFirebase) {
-          hint.textContent = "Firebase connected. Showing local until cloud sync returns data.";
-        } else {
-          hint.textContent = "Local scores saved on-device. Add Firebase config to sync.";
-        }
-      }
+      const rows = (hasFirebase && hasRemote ? remote : local).slice(0, maxRows);
 
       list.innerHTML = rows.length ? "" : "<li class='ui-list-item'>No scores yet</li>";
 
@@ -472,12 +460,16 @@ import '/core.js';
     async function openLeaderboard(options = {}) {
       currentMode = options.mode || "default";
       overlay.classList.remove("hidden");
+      if (hint) {
+        hint.textContent = "";
+        hint.classList.add("hidden");
+      }
       if (options.score !== undefined) {
         pendingScore = { score: Number(options.score) || 0, turns: Number(options.turns) || 0, undos: Number(options.undos) || 0, date: Date.now() };
       }
       const shouldShowEntry = options.showEntryForm ?? (pendingScore && leaderboardManager.isHighScore(pendingScore.score));
       if (shouldShowEntry && pendingLabel && pendingScore) {
-        pendingLabel.textContent = `New high score: ${pendingScore.score.toLocaleString()}`;
+        pendingLabel.textContent = pendingScore.score.toLocaleString();
       }
       if (closeBtn) {
         const isGameEnd = currentMode === "gameover" || currentMode === "win";
@@ -491,9 +483,6 @@ import '/core.js';
       }
       if (tryAgainBtn) {
         tryAgainBtn.classList.toggle("hidden", !(currentMode === "gameover" || currentMode === "win"));
-      }
-      if (hint && (currentMode === "gameover" || currentMode === "win")) {
-        hint.textContent = "Add your name to save this run, then try again.";
       }
       await renderLeaderboard();
     }
@@ -541,15 +530,6 @@ import '/core.js';
       closeBtn.addEventListener("click", closeLeaderboard);
     }
 
-    if (clearBtn) {
-      clearBtn.addEventListener("click", () => {
-        if (confirm("Clear local high scores?")) {
-          leaderboardManager.clearLocal();
-          renderLeaderboard();
-        }
-      });
-    }
-
     if (tryAgainBtn) {
       tryAgainBtn.addEventListener("click", restartGame);
     }
@@ -591,6 +571,50 @@ import '/core.js';
     });
   }
 
+  function setupConfirmOverlay() {
+    const overlay = document.getElementById("confirm-overlay");
+    const titleEl = document.getElementById("confirm-title");
+    const messageEl = document.getElementById("confirm-message");
+    const yesBtn = document.getElementById("confirm-yes");
+    const noBtn = document.getElementById("confirm-no");
+    if (!overlay || !yesBtn || !noBtn) return null;
+
+    let onConfirm = null;
+    let onCancel = null;
+
+    const close = (confirmed) => {
+      overlay.classList.add("hidden");
+      const confirmCb = onConfirm;
+      const cancelCb = onCancel;
+      onConfirm = null;
+      onCancel = null;
+      if (confirmed) {
+        confirmCb?.();
+      } else {
+        cancelCb?.();
+      }
+    };
+
+    const open = (options = {}) => {
+      if (!overlay.classList.contains("hidden")) return;
+      if (titleEl) titleEl.textContent = options.title || "Confirm";
+      if (messageEl) messageEl.textContent = options.message || "";
+      yesBtn.textContent = options.confirmText || "Yes";
+      noBtn.textContent = options.cancelText || "No";
+      onConfirm = typeof options.onConfirm === "function" ? options.onConfirm : null;
+      onCancel = typeof options.onCancel === "function" ? options.onCancel : null;
+      overlay.classList.remove("hidden");
+    };
+
+    yesBtn.addEventListener("click", () => close(true));
+    noBtn.addEventListener("click", () => close(false));
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+
+    return open;
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     if (window.firebaseConfig && window.FirebaseManager && !window.FirebaseManager.enabled) {
       window.FirebaseManager.configure(window.firebaseConfig);
@@ -598,11 +622,17 @@ import '/core.js';
     setupLeaderboard();
     setupSettingsOverlay();
     setupViews();
+    const openConfirm = setupConfirmOverlay();
     setupGameOverListener();
     setupNav();
     setupGameLaunchers();
     setupMatch3Stub();
     setupPicrossStub();
+
+    if (openConfirm) {
+      const game = games["2048"];
+      game?.setConfirmHandler?.(openConfirm);
+    }
 
     const cityScene = setupCityScene();
     if (cityScene) {

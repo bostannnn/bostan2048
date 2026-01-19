@@ -5,6 +5,10 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 ## Phase 1: Foundation (Completed)
 - [x] Project scaffolding (Vite).
 - [x] UI system (design tokens + shared components).
+- [x] Spacing scale tokens in `ui/theme.css`.
+- [x] Overlay-centered helper classes in `ui/components.css`.
+- [x] Leaderboard components standardized in `ui/components.css`.
+- [x] New Game confirmation overlay (standard glass UI, no close icon).
 - [x] UI components centralized in `ui/theme.css` and `ui/components.css`.
 - [x] ESM architecture with `GameInterface`.
 - [x] Dev workflow via Vite.
@@ -24,7 +28,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 ## Phase 4: Economy & Polish (Pending)
 - [x] Basic coin tracking (local-only).
 - [x] UI polish (Liquid Glass styling, dark mode).
-- [x] Leaderboard UI (local saves + name capture).
+- [x] Leaderboard UI (local saves + name capture, top-10 scroll list with hidden scrollbar, centered header/actions, hint removed).
 - [x] Input polish (full-height swipe surface on `.game-stage`, with bottom padding inside the swipe area; scroll/selection suppression in the 2048 view).
 - [ ] Shop wiring (catalog + inventory persistence).
 - [x] Cloud leaderboards (Firebase configured + local fallback).
@@ -33,3 +37,4 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [ ] Navigation gating: keep nav hidden and coins UI suppressed until features are ready.
 - [ ] Audio system (Howler.js integration).
 - [ ] Animation tooling (GSAP for Match-3 and advanced UI transitions).
+- [x] Confirm before starting a new 2048 game.
