@@ -6,22 +6,32 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      },
       manifest: {
         name: 'Photo 2048',
         short_name: 'Photo2048',
         description: 'A modern 2048 game',
-        theme_color: '#ffffff',
+        start_url: './',
+        scope: './',
+        display: 'standalone',
+        background_color: '#F2F2F7',
+        theme_color: '#F2F2F7',
+        orientation: 'portrait',
         icons: [
           {
             src: 'assets/classic/2048.jpg',
             sizes: '192x192',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
           },
           {
             src: 'assets/classic/2048.jpg',
             sizes: '512x512',
-            type: 'image/jpeg'
+            type: 'image/jpeg',
+            purpose: 'any maskable'
           }
         ]
       }

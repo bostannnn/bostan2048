@@ -1,30 +1,32 @@
 # Arcade City Roadmap
 
-## Phase 1: Foundation (COMPLETED) ✅
-- [x] **Project Scaffolding:** Vite setup.
-- [x] **UI System:** CSS Design tokens (Apple HIG style).
-- [x] **Architecture:** Refactor to ES Modules (ESM) with `GameInterface`.
-- [x] **Dev Workflow:** Local server integration via Vite.
+Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status against that spec.
 
-## Phase 2: Game Modules (IN PROGRESS) 🏗️
-- [x] **2048 Module:** Ported to ESM structure.
-- [x] **2048 Pixi Renderer:** Board rendering now uses PixiJS v8 with HTML overlays.
-- [ ] **Match-3 Module:** Create placeholder cartridge.
-- [ ] **Picross Module:** Create placeholder cartridge.
+## Phase 1: Foundation (Completed)
+- [x] Project scaffolding (Vite).
+- [x] UI system (design tokens + shared components).
+- [x] ESM architecture with `GameInterface`.
+- [x] Dev workflow via Vite.
 
-## Phase 3: Meta-Game (IN PROGRESS) 🏗️
-- [x] **City Engine:** PixiJS v8 basic isometric grid.
-- [ ] **Interaction:** Move `CityScene.js` into a modular `src/games/city/` cartridge.
-- [ ] **Building:** Implement building placement logic using inventory.
+## Phase 2: Game Modules (In Progress)
+- [x] 2048 module (ESM).
+- [x] 2048 Pixi renderer with HTML overlays.
+- [ ] Match-3 placeholder cartridge.
+- [ ] Picross placeholder cartridge.
 
-## Phase 4: Economy & Polish (PENDING) ⏳
-- [x] **Economy:** Basic coin tracking.
-- [x] **UI Polish:** Liquid Glass aesthetics, SF Symbols, Dark Mode.
-- [x] **Leaderboard UI:** Glass sheet with local saves + name capture; documented reusable styles for mini buttons and cards.
-- [x] **Input Polish:** Expanded 2048 swipe hitbox to full-height `.game-stage` using pointer events to remove dead zones on mobile.
-- [ ] **Shop:** Connect JSON catalog to inventory persistence.
-- [ ] **Cloud:** Enable Firebase leaderboards (client wiring ready; add `window.firebaseConfig` to activate).
-- [ ] **PWA:** Service Worker caching for ESM assets.
-- [ ] **Navigation gating:** City/shop views hidden until features are live; coins UI hidden pending economy UX.
-- [ ] **Audio System:** Install Howler.js and implement `AudioManager` (global mute/sfx toggle).
-- [ ] **Animation:** Install GSAP for Match-3 gem physics and UI transitions.
+## Phase 3: Meta-Game (In Progress)
+- [x] City engine (PixiJS v8 isometric grid, legacy implementation).
+- [ ] Move CityScene into `src/games/city/` cartridge.
+- [ ] Building placement logic tied to inventory rules.
+
+## Phase 4: Economy & Polish (Pending)
+- [x] Basic coin tracking (local-only).
+- [x] UI polish (Liquid Glass styling, dark mode).
+- [x] Leaderboard UI (local saves + name capture).
+- [x] Input polish (full-height swipe surface on `.game-stage`).
+- [ ] Shop wiring (catalog + inventory persistence).
+- [ ] Cloud leaderboards (Firebase config + index).
+- [ ] PWA caching strategy for ESM assets.
+- [ ] Navigation gating: keep nav hidden and coins UI suppressed until features are ready.
+- [ ] Audio system (Howler.js integration).
+- [ ] Animation tooling (GSAP for Match-3 and advanced UI transitions).

@@ -1,5 +1,7 @@
 # Technical Design Document (TDD) - v2.1 (ESM)
 
+Canonical spec: `SOURCE_OF_TRUTH.md`. This TDD is a synchronized technical summary.
+
 ## 1. Architecture Overview
 Arcade City uses a **Hub & Spoke** model implemented with modern JavaScript **ES Modules**.
 
@@ -41,7 +43,7 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
-*   **City:** PixiJS v8 (Canvas) for isometric performance.
+*   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
 *   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI; Match-3 planned for PixiJS.
 *   **Liquid Glass:** `ui/theme.css` carries aurora gradients + `--motion-*` tokens; `ui/components.css` provides glass cards/pills and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
 
@@ -51,9 +53,9 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 - For leaderboards, use the .leader-card structure with .lb-rank, .lb-player (name + date), .lb-score, and .lb-stat-stack for stats (undos/turns). Add stats by extending the stack instead of altering the layout.
 
 ### 3.6 Animation & Audio
-* **Complex Motion:** **GSAP (GreenSock)** is required for Match-3 sequencing (swap/drop cascades) and complex UI state transitions.
-* **Audio:** **Howler.js** manages audio sprites (SFX) and background loops to ensure low-latency playback on iOS.
-* **Haptics:** `navigator.vibrate()` calls are wrapped in `GameInterface` for tactile feedback on valid moves/errors.
+* **Complex Motion:** GSAP is planned for Match-3 sequencing (swap/drop cascades) and complex UI transitions, but not yet integrated.
+* **Audio:** Howler.js is planned for audio sprites and background loops, but not yet integrated.
+* **Haptics:** `navigator.vibrate()` is not wired yet; future work may route haptics through `GameInterface`.
 
 ## 4. Firebase / Leaderboards
 *   Config: provide `window.firebaseConfig` or call `window.FirebaseManager.configure(config)` to enable Firestore-backed leaderboards.
@@ -64,5 +66,5 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 
 ## 5. UI State (Current)
 *   Active surface: 2048 only. Bottom navigation is hidden; coins UI is suppressed until the economy/city/shop flows are production-ready.
-*   Settings are accessed via the header cog; theme toggle lives in the settings overlay.
+*   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the space beneath the board) interactive without blocking header buttons.
