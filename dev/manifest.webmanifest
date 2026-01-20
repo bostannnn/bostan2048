@@ -1,0 +1,1 @@
+{"name":"Photo 2048 Dev","short_name":"Photo2048 Dev","description":"A modern 2048 game","start_url":"./","display":"standalone","background_color":"#F2F2F7","theme_color":"#F2F2F7","lang":"en","scope":"./","orientation":"portrait","icons":[{"src":"assets/levels/level-1/2048-dev.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

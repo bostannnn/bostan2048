@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Arcade City</title>
+    <meta name="theme-color" content="#F2F2F7">
+    <link rel="icon" href="assets/levels/level-1/2048.jpg" sizes="192x192">
+    <link rel="apple-touch-icon" href="assets/levels/level-1/2048.jpg">
+  <script type="module" crossorigin src="/bostan2048/dev/assets/index-CXh9GaBA.js"></script>
+  <link rel="stylesheet" crossorigin href="/bostan2048/dev/assets/index-mJQziHld.css">
+<link rel="manifest" href="/bostan2048/dev/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/bostan2048/dev/registerSW.js"></script></head>
+<body>
+
+    <!-- Leaderboard Modal (Glass Sheet) -->
+    <div id="leaderboard" class="overlay hidden">
+        <div class="glass-panel overlay-content overlay-centered">
+            <div class="overlay-header">
+                <h1 id="leaderboard-title" class="ui-title overlay-title">Leaderboard</h1>
+                <button id="close-leaderboard" class="ui-button icon-only secondary overlay-close" aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <p id="leaderboard-hint" class="ui-caption overlay-subtitle">Local scores saved on-device. Entries show Score / Turns / Undos.</p>
+            
+            <div id="leaderboard-entry" class="leaderboard-entry overlay-entry hidden">
+                <div class="ui-title text-hero overlay-hero leaderboard-hero" id="leaderboard-pending">0</div>
+                <div class="leaderboard-form overlay-form">
+                    <input id="player-name" class="leaderboard-input" type="text" maxlength="20" autocomplete="name" placeholder="Enter your name">
+                    <button id="save-score" class="ui-button small">Save</button>
+                </div>
+            </div>
+
+            <div id="leaderboard-status" class="leaderboard-status hidden"></div>
+
+            <ul id="high-score-list" class="ui-list leaderboard-list">
+                <!-- Scores will be injected here -->
+            </ul>
+            
+            <div class="overlay-actions">
+                <button id="leaderboard-try-again" class="ui-button small primary hidden">Try Again</button>
+                <button id="leaderboard-levels" class="ui-button secondary small hidden">Levels</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="update-toast" class="glass-pill update-toast hidden" role="status" aria-live="polite">
+        <span>Update ready.</span>
+        <button id="update-refresh" type="button" class="ui-button small">Refresh</button>
+        <button id="update-dismiss" type="button" class="ui-button secondary small">Later</button>
+    </div>
+
+    <div class="app-shell">
+        <main class="app-main">
+            <!-- City View -->
+            <section id="view-city" class="view hidden">
+                <div class="view-header">
+                    <h2>City</h2>
+                    <div class="city-tools">
+                        <button class="ui-button city-mode active" data-city-mode="place">Place</button>
+                        <button class="ui-button secondary city-mode" data-city-mode="erase">Erase</button>
+                        <button id="city-clear" class="ui-button secondary">Clear</button>
+                        <button id="city-regenerate" class="ui-button secondary">Regen</button>
+                    </div>
+                </div>
+                <div id="city-root" class="city-root" aria-label="City grid"></div>
+                <div id="city-palette" class="city-palette"></div>
+                <p id="city-hint" class="glass-pill city-hint">Tap map to place.</p>
+            </section>
+
+            <!-- 2048 Game View -->
+            <section id="view-2048" class="view">
+                <!-- 2048 mounts here -->
+            </section>
+
+            <!-- Match-3 Game View -->
+            <section id="view-match3" class="view hidden">
+                <!-- Match-3 mounts here -->
+            </section>
+
+            <!-- Shop View -->
+            <section id="view-shop" class="view hidden">
+                <div class="view-header">
+                    <h2>Shop</h2>
+                    <p class="view-subtitle">Customize your city.</p>
+                </div>
+                <div id="shop-status" class="shop-status hidden"></div>
+                <div id="shop-list" class="shop-list"></div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation with SVG Icons -->
+        <nav class="bottom-nav" aria-label="Primary">
+            <button class="nav-button active" data-view="2048">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6 0h4v4h-4v-4z"/></svg>
+                <span>2048</span>
+            </button>
+            <button class="nav-button" data-view="match3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="6" cy="7" r="2.5"/>
+                    <circle cx="12" cy="12" r="2.5"/>
+                    <circle cx="18" cy="7" r="2.5"/>
+                    <circle cx="6" cy="17" r="2.5"/>
+                    <circle cx="18" cy="17" r="2.5"/>
+                </svg>
+                <span>Match-3</span>
+            </button>
+            <button class="nav-button" data-view="city">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>City</span>
+            </button>
+            <button class="nav-button" data-view="shop">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm0 10c-1.1 0-2-.9-2-2h-2c0 2.21 1.79 4 4 4s4-1.79 4-4h-2c0 1.1-.9 2-2 2z"/></svg>
+                <span>Shop</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="overlay hidden">
+        <div class="glass-panel overlay-content settings-panel">
+            <div class="overlay-header">
+                <h1 class="ui-title overlay-title">Settings</h1>
+                <button id="close-settings" class="ui-button icon-only secondary overlay-close" aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <div class="settings-row">
+                <span class="ui-title settings-title">Theme</span>
+                <label class="ui-toggle">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="settings-row">
+                <div class="settings-stack">
+                    <span class="ui-title settings-title">PWA Update</span>
+                    <span class="ui-caption">Force reload to pick up latest cached assets.</span>
+                </div>
+                <button id="pwa-refresh" class="ui-button secondary small">Refresh</button>
+            </div>
+            <div class="settings-row settings-row-column">
+                <span class="ui-title settings-title">Dev Tools</span>
+                <div class="settings-button-row">
+                    <button id="dev-game-over" class="ui-button secondary small">Force Game Over</button>
+                    <button id="dev-add-2048" class="ui-button secondary small">Add 2048 Tile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Overlay -->
+    <div id="confirm-overlay" class="overlay hidden">
+        <div class="glass-panel overlay-content overlay-centered">
+            <div class="overlay-header">
+                <h1 id="confirm-title" class="ui-title overlay-title">Start new game?</h1>
+            </div>
+            <p id="confirm-message" class="ui-caption overlay-subtitle">Your current run will be lost.</p>
+            <div class="overlay-actions">
+                <button id="confirm-no" class="ui-button secondary">No</button>
+                <button id="confirm-yes" class="ui-button gold">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Select Overlay -->
+    <div id="level-select" class="overlay hidden">
+        <div class="glass-panel overlay-content overlay-centered">
+            <div class="overlay-header">
+                <h1 id="level-select-title" class="ui-title overlay-title">Select Level</h1>
+                <button id="close-level-select" class="ui-button icon-only secondary overlay-close" aria-label="Close">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <p id="level-select-subtitle" class="ui-caption overlay-subtitle">Reach 2048 to unlock the next level.</p>
+            <div id="level-list" class="level-list"></div>
+        </div>
+    </div>
+
+    
+    <!-- Game Architecture -->
+
+    <!-- Legacy City Modules -->
+    <script>
+      // Firebase config injected before app.js so FirebaseManager can auto-init
+      window.firebaseConfig = {
+        apiKey: "AIzaSyAn2ZDH7D7R9yArS2QfO7tvdsJDccZrzcU",
+        authDomain: "our-city-4d536.firebaseapp.com",
+        projectId: "our-city-4d536",
+        storageBucket: "our-city-4d536.firebasestorage.app",
+        messagingSenderId: "99991718389",
+        appId: "1:99991718389:web:da368f4d8d48cdee64b8bc",
+        measurementId: "G-XDTXTBKD6D"
+      };
+    </script>
+
+    <!-- App Entry Point -->
+</body>
+</html>
