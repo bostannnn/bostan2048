@@ -96,8 +96,10 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   Level tile portraits load from `public/assets/levels/level-<n>/`, and the selector shows a preview image per level.
 *   Add/rename levels by editing the `LEVELS` list in `src/games/2048/index.js` and supplying the matching asset folder + preview image.
 *   The 2048 board renders via PixiJS v8 while header/overlays remain HTML.
+*   2048 swipe input includes a pointer-up fallback for more reliable swipes.
 *   Match-3 ships with 10 levels (targets + move limits) and uses the shared level selector overlay.
 *   Match-3 uses Kenney Puzzle Pack gem sprites and placeholder previews/backgrounds.
+*   Match-3 supports drag-to-swap and gives a quick reject animation + haptic pulse on invalid swaps.
 
 ## Firebase Integration (Leaderboards)
 Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.

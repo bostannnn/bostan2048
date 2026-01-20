@@ -60,6 +60,10 @@ export class Match3Game extends GameInterface {
     this.selectedCell = null;
     this.confirmHandler = null;
     this.pointerDown = false;
+    this.pointerId = null;
+    this.dragStart = null;
+    this.dragSwapTriggered = false;
+    this.lastHoverCell = null;
   }
 
   async mount(container) {
@@ -116,6 +120,7 @@ export class Match3Game extends GameInterface {
     if (this.boardEl) {
       this.boardEl.style.touchAction = "none";
       this.boardEl.addEventListener("pointerdown", this.handlePointerDown);
+      this.boardEl.addEventListener("pointermove", this.handlePointerMove);
       this.boardEl.addEventListener("pointerup", this.handlePointerUp);
       this.boardEl.addEventListener("pointerleave", this.handlePointerCancel);
       this.boardEl.addEventListener("pointercancel", this.handlePointerCancel);
@@ -127,15 +132,46 @@ export class Match3Game extends GameInterface {
     const cell = this.getCellFromEvent(event);
     if (!cell) return;
     this.pointerDown = true;
+    this.pointerId = event.pointerId ?? null;
+    this.dragStart = { x: event.clientX, y: event.clientY };
+    this.dragSwapTriggered = false;
+    this.lastHoverCell = cell;
+    if (this.boardEl && event.pointerId !== undefined) {
+      this.boardEl.setPointerCapture?.(event.pointerId);
+    }
     this.setSelectedCell(cell);
+  };
+
+  handlePointerMove = (event) => {
+    if (!this.pointerDown || this.inputLocked || !this.selectedCell || !this.renderer) return;
+    const cell = this.getCellFromEvent(event);
+    if (!cell) return;
+    this.lastHoverCell = cell;
+    if (this.dragSwapTriggered) return;
+
+    const dx = event.clientX - (this.dragStart?.x ?? event.clientX);
+    const dy = event.clientY - (this.dragStart?.y ?? event.clientY);
+    const distance = Math.hypot(dx, dy);
+    const threshold = Math.max(10, this.renderer.metrics.tileSize * 0.25);
+    if (distance < threshold) return;
+
+    if (!this.engine?.isAdjacent(cell, this.selectedCell)) return;
+    this.dragSwapTriggered = true;
+    this.pointerDown = false;
+    void this.trySwap(this.selectedCell, cell);
+    this.setSelectedCell(null);
+    this.releasePointerCapture(event);
+    this.dragStart = null;
+    this.lastHoverCell = null;
   };
 
   handlePointerUp = async (event) => {
     if (!this.pointerDown) return;
     this.pointerDown = false;
+    this.releasePointerCapture(event);
     if (this.inputLocked) return;
 
-    const cell = this.getCellFromEvent(event);
+    const cell = this.getCellFromEvent(event) || this.lastHoverCell;
     if (!cell || !this.selectedCell) return;
 
     const sameCell = cell.row === this.selectedCell.row && cell.col === this.selectedCell.col;
@@ -151,12 +187,30 @@ export class Match3Game extends GameInterface {
 
     await this.trySwap(this.selectedCell, cell);
     this.setSelectedCell(null);
+    this.dragStart = null;
+    this.lastHoverCell = null;
   };
 
   handlePointerCancel = () => {
     this.pointerDown = false;
+    this.releasePointerCapture();
     this.setSelectedCell(null);
+    this.dragStart = null;
+    this.lastHoverCell = null;
+    this.dragSwapTriggered = false;
   };
+
+  releasePointerCapture(event) {
+    if (!this.boardEl) return;
+    const pointerId = event?.pointerId ?? this.pointerId;
+    if (pointerId === null || pointerId === undefined) return;
+    try {
+      this.boardEl.releasePointerCapture?.(pointerId);
+    } catch (error) {
+      // Ignore if capture was not set.
+    }
+    this.pointerId = null;
+  }
 
   setSelectedCell(cell) {
     this.selectedCell = cell;
@@ -221,6 +275,10 @@ export class Match3Game extends GameInterface {
       } else {
         await this.renderer.animateSwap(tileA, tileB, to, from);
         this.render();
+        await this.renderer.animateReject(tileA, tileB);
+        if (navigator.vibrate) {
+          navigator.vibrate(20);
+        }
       }
     } finally {
       this.inputLocked = false;
@@ -471,6 +529,7 @@ export class Match3Game extends GameInterface {
   destroy() {
     if (this.boardEl) {
       this.boardEl.removeEventListener("pointerdown", this.handlePointerDown);
+      this.boardEl.removeEventListener("pointermove", this.handlePointerMove);
       this.boardEl.removeEventListener("pointerup", this.handlePointerUp);
       this.boardEl.removeEventListener("pointerleave", this.handlePointerCancel);
       this.boardEl.removeEventListener("pointercancel", this.handlePointerCancel);

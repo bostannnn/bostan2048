@@ -170,8 +170,15 @@ export class KeyboardInputManager {
     if (event.pointerType === "touch" && event.isPrimary === false) return;
     if (this.hasSwiped) return;
 
-    // Optional: Logic for tap vs swipe end could go here
-    // For now we rely on move to trigger the swipe
+    var dx = event.clientX - this.touchStartClientX;
+    var dy = event.clientY - this.touchStartClientY;
+    var absDx = Math.abs(dx);
+    var absDy = Math.abs(dy);
+
+    if (Math.max(absDx, absDy) > 8) {
+      this.emit("move", absDx > absDy ? (dx > 0 ? 1 : 3) : dy > 0 ? 2 : 0);
+      this.hasSwiped = true;
+    }
   }
 
   handleTouchCancel(event) {

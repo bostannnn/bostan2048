@@ -43,6 +43,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Animation tooling (GSAP for Match-3 and advanced UI transitions).
 - [x] Confirm before starting a new 2048 game.
 - [x] GitHub Pages workflows (manual prod deploy + dev subpath).
+- [x] Match-3 input polish (drag-to-swap + invalid move feedback).
 
 ## Progress Report (2026-01-19)
 - Level system finalized: per-level assets, preview card layout, and per-level leaderboards.
@@ -52,3 +53,12 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - Match-3 module added with 10 levels and shared leaderboards.
 - Bottom nav now routes 2048, Match-3, City, and Shop (coins still hidden).
 - Pending: run `npm install` to update `package-lock.json` once registry access is available.
+
+## Progress Report (2026-01-20)
+- Match-3 now uses GSAP for swaps/drops, with invalid swap feedback and drag-to-swap input.
+- Match-3 invalid swaps now trigger a short haptic pulse when supported.
+- 2048 background effects pause when the view is inactive.
+- 2048 swipe input now has a pointer-up fallback to reduce missed swipes.
+- Shared layout spacing tokens applied across games for consistent vertical rhythm.
+- GitHub Pages setup: dev subpath deployment + manual prod deploy workflows.
+- Dev PWA icon badge (DEV) for the dev build.

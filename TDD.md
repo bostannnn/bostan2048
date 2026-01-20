@@ -104,6 +104,8 @@ Events:
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).
 *   Performance: 2048 background effects pause when the view is inactive.
+*   Match-3 input supports drag-to-swap with a reject animation + haptic pulse on invalid moves.
+*   2048 swipe input includes a pointer-up fallback to reduce missed swipes.
 *   Levels: 2048 ships with three levels; Match-3 ships with ten levels. The next level unlocks after hitting the prior target.
 *   Level select: both games use the shared level selector overlay and Levels header button.
 *   Restart: restarting opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.

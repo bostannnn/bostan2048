@@ -10,7 +10,7 @@ body[data-view="match3"] #view-match3.view {
 }
 
 #view-match3.view {
-  padding: 8px 0 0;
+  padding: var(--ui-layout-game-view-padding-top) 0 0;
   max-width: 100%;
   width: 100%;
   align-items: center;
@@ -29,17 +29,17 @@ body[data-view="match3"] #view-match3.view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 12px 0 24px;
+  gap: var(--ui-layout-game-container-gap);
+  padding: var(--ui-layout-game-container-padding-top) 0 var(--ui-layout-game-container-padding-bottom);
 }
 
 .match3-header {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 12px;
+  gap: var(--ui-layout-game-header-gap);
   width: 100%;
   max-width: min(980px, 96vw, var(--board-span));
-  padding: 12px 14px;
+  padding: var(--ui-layout-game-header-padding-y) var(--ui-layout-game-header-padding-x);
 }
 
 .match3-scores {
@@ -59,8 +59,8 @@ body[data-view="match3"] #view-match3.view {
   justify-content: center;
   flex: 1;
   width: 100%;
-  padding-top: 20px;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-top: var(--ui-layout-game-stage-top);
+  padding-bottom: calc(var(--ui-layout-game-stage-bottom) + env(safe-area-inset-bottom));
   touch-action: none;
 }
 

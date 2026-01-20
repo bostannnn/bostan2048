@@ -382,6 +382,40 @@ export class Match3Renderer {
     });
   }
 
+  animateReject(tileA, tileB) {
+    const targets = [tileA, tileB]
+      .map((tile) => this.tiles.get(tile))
+      .filter(Boolean);
+    if (!targets.length) return Promise.resolve();
+
+    gsap.killTweensOf(targets);
+    gsap.killTweensOf(targets.map((target) => target.scale));
+
+    return new Promise((resolve) => {
+      gsap.to(targets, {
+        rotation: 0.12,
+        duration: 0.06,
+        yoyo: true,
+        repeat: 3,
+        ease: "power1.inOut",
+        onComplete: () => {
+          targets.forEach((target) => {
+            target.rotation = 0;
+          });
+          resolve();
+        },
+      });
+      gsap.to(targets.map((target) => target.scale), {
+        x: 1.08,
+        y: 1.08,
+        duration: 0.08,
+        yoyo: true,
+        repeat: 1,
+        ease: "power1.out",
+      });
+    });
+  }
+
   destroy() {
     if (this.resizeObserver && this.hostEl) {
       this.resizeObserver.unobserve(this.hostEl);

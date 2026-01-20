@@ -65,6 +65,7 @@ and link here.
 - Rendering: PixiJS v8 for canvas scenes (2048 board, City), HTML/CSS for UI.
 - Animation: GSAP drives Match-3 board motion (swaps, drops, spawns), PixiJS
   handles rendering, and CSS animations/transitions cover UI polish.
+- Haptics: Match-3 uses `navigator.vibrate()` for invalid swap feedback when available.
 - Audio: Howler.js is the planned audio system (not yet integrated).
 - Tooling: Firebase Admin SDK is used for one-off leaderboard migration scripts.
 - Art: Kenney Puzzle Pack assets provide match-3 gem sprites and placeholders.

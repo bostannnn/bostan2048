@@ -359,7 +359,7 @@ export class Photo2048 extends GameInterface {
                         <span class="score-label">Best</span>
                         <span class="score-value">0</span>
                     </div>
-                    <button id="settings-button" class="ui-button mini secondary settings-inline" aria-label="Settings">⚙️</button>
+                    <button id="settings-button" class="ui-button secondary small settings-inline" aria-label="Settings">Settings</button>
                     
                     <div class="currency-container glass-pill" id="currency-balance" data-label="Coins">
                         <span class="score-label">Coins</span>
@@ -367,7 +367,7 @@ export class Photo2048 extends GameInterface {
                     </div>
                 </div>
                 <div class="header-buttons">
-                    <button id="show-leaderboard" class="ui-button mini secondary header-left" aria-label="Leaderboard">🏆</button>
+                    <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>
                     <button id="undo-button" class="ui-button secondary undo-button" disabled>↩️ Undo</button>
                     <span class="header-spacer"></span>
                     <button id="level-select-button" class="ui-button secondary">Levels</button>
