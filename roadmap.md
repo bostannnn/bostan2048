@@ -11,7 +11,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] New Game confirmation overlay (standard glass UI, no close icon).
 - [x] UI components centralized in `ui/theme.css` and `ui/components.css`.
 - [x] ESM architecture with `GameInterface`.
-- [x] Dev workflow via Vite.
+- [x] Dev workflow via Vite (serve at `/bostan2048/` to mirror GitHub Pages).
 - [x] PWA manifest + service worker wiring via VitePWA.
 
 ## Phase 2: Game Modules (In Progress)

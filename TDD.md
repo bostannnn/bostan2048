@@ -108,9 +108,12 @@ Events:
 *   2048 swipe input includes a pointer-up fallback to reduce missed swipes.
 *   Levels: 2048 ships with three levels; Match-3 ships with ten levels. The next level unlocks after hitting the prior target.
 *   Level select: both games use the shared level selector overlay and Levels header button.
-*   Restart: restarting opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.
+*   Restart: the New Game action opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.
 
 ## 6. Level Configuration
 *   The `LEVELS` list in `src/games/2048/index.js` is the source of truth for level id, display title, asset folder, and preview image.
 *   Each level's tile portraits live under `public/assets/levels/level-<n>/` and must include `{2..32768}.jpg` plus a preview image (currently `2048.jpg`).
 *   The `LEVELS` list in `src/games/match3/index.js` is the source of truth for board size, color count, target score, and moves.
+
+## 7. Build & Hosting
+*   Vite `base` is set via `VITE_BASE` (default `/bostan2048/`) for dev and production; dev root (`/`) redirects to the base path to mirror GitHub Pages asset paths.

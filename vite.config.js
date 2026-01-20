@@ -11,6 +11,23 @@ const normalizeBase = (value) => {
 
 const escapeForRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const devBaseRedirect = (base) => ({
+  name: 'dev-base-redirect',
+  apply: 'serve',
+  configureServer(server) {
+    if (base === '/') return;
+    server.middlewares.use((req, res, next) => {
+      if (req.url === '/' || req.url === '/index.html') {
+        res.statusCode = 302;
+        res.setHeader('Location', base);
+        res.end();
+        return;
+      }
+      next();
+    });
+  }
+});
+
 export default defineConfig(() => {
   const base = normalizeBase(process.env.VITE_BASE || '/bostan2048/');
   const buildTag = (process.env.VITE_BUILD_TAG || '').toLowerCase();
@@ -48,6 +65,7 @@ export default defineConfig(() => {
   return {
     base,
     plugins: [
+      devBaseRedirect(base),
       VitePWA({
         registerType: 'autoUpdate',
         devOptions: {

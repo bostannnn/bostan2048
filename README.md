@@ -28,7 +28,8 @@ This project uses ES Modules, which requires a local web server to run.
     ```
 
 3.  **Open in Browser:**
-    Open the URL shown in your terminal (e.g., `http://localhost:5173` or the Network IP).
+    Open the URL shown in your terminal with `/bostan2048/` appended (e.g., `http://localhost:5173/bostan2048/`).
+    The dev server redirects `/` to `/bostan2048/` so the base path matches GitHub Pages.
 
 4.  **Run tests:**
     ```bash
