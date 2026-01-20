@@ -9,10 +9,14 @@ const normalizeBase = (value) => {
   return base;
 };
 
+const escapeForRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export default defineConfig(() => {
   const base = normalizeBase(process.env.VITE_BASE || '/bostan2048/');
   const buildTag = (process.env.VITE_BUILD_TAG || '').toLowerCase();
   const isDevBuild = buildTag === 'dev';
+  const devScope = `${base}dev/`;
+  const navigateFallbackDenylist = isDevBuild ? [] : [new RegExp(`^${escapeForRegExp(devScope)}`)];
   const iconPath = isDevBuild
     ? 'assets/levels/level-1/2048-dev.svg'
     : 'assets/levels/level-1/2048.jpg';
@@ -49,6 +53,10 @@ export default defineConfig(() => {
         devOptions: {
           enabled: true,
           type: 'module'
+        },
+        workbox: {
+          cacheId: isDevBuild ? 'photo2048-dev' : 'photo2048-prod',
+          navigateFallbackDenylist
         },
         manifest: {
           name: isDevBuild ? 'Photo 2048 Dev' : 'Photo 2048',
