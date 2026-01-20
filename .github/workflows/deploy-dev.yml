@@ -1,0 +1,31 @@
+name: Deploy Dev (GitHub Pages)
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          VITE_BASE: /bostan2048/dev/
+          VITE_BUILD_TAG: dev
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          target-folder: dev
+          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}

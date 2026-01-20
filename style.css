@@ -129,8 +129,8 @@ body[data-view="2048"] #view-2048.view {
   color: var(--ui-accent);
   opacity: 1;
   transform: translateY(-2px);
-  text-shadow: 0 0 8px rgba(0, 122, 255, 0.35);
-  background: rgba(0, 122, 255, 0.12);
+  text-shadow: 0 0 8px var(--ui-accent-highlight);
+  background: var(--ui-accent-highlight);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 8px 16px rgba(0,0,0,0.12);
 }
 
@@ -295,8 +295,8 @@ body[data-view="2048"] #view-2048.view {
     color: var(--ui-text-primary);
 }
 
-/* Game & Shop Lists */
-.game-list, .shop-list {
+/* Shop Lists */
+.shop-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
@@ -305,7 +305,7 @@ body[data-view="2048"] #view-2048.view {
   margin: 0 auto;
 }
 
-.game-card, .shop-item {
+.shop-item {
   background: var(--material-regular);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -318,7 +318,7 @@ body[data-view="2048"] #view-2048.view {
   gap: 12px;
 }
 
-.game-card h3, .shop-title {
+.shop-title {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
@@ -418,6 +418,10 @@ body[data-view="2048"] #view-2048.view {
 #leaderboard .glass-panel {
   background: radial-gradient(80% 60% at 50% 0%, rgba(255, 214, 120, 0.08), transparent 70%), var(--material-regular);
   box-shadow: 0 20px 50px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05), 0 12px 32px var(--gold-glow);
+}
+
+#level-select .overlay-content {
+  max-width: min(900px, 94vw);
 }
 
 @keyframes float {

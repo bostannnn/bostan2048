@@ -355,7 +355,11 @@ input:checked + .slider:before {
 }
 
 .leaderboard-input::placeholder {
-  color: rgba(255,255,255,0.55);
+  color: rgba(0,0,0,0.45);
+}
+
+.dark-mode .leaderboard-input::placeholder {
+  color: rgba(255,255,255,0.6);
 }
 
 .leader-card {
@@ -458,6 +462,163 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   gap: var(--ui-space-1);
+}
+
+.level-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-4);
+  width: 100%;
+}
+
+.level-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: var(--material-regular);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  cursor: pointer;
+  transition: transform var(--motion-fast) ease, box-shadow var(--motion-medium) ease, border-color var(--motion-fast) ease;
+  overflow: hidden;
+}
+
+.level-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.level-card:active {
+  transform: scale(0.99);
+}
+
+.level-card:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+
+.level-card:disabled,
+.level-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.level-card.current {
+  border-color: var(--ui-accent);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.2), 0 0 0 1px var(--ui-accent-highlight);
+}
+
+.level-card-soon {
+  background: var(--material-thin);
+  border-style: dashed;
+  cursor: default;
+}
+
+.level-preview {
+  width: 100%;
+  height: clamp(130px, 18vh, 180px);
+  overflow: hidden;
+  background: var(--material-thin);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.level-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.level-preview-soon {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0)),
+    radial-gradient(80% 80% at 20% 20%, rgba(255,204,92,0.2), transparent 60%);
+  color: var(--ui-text-secondary);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.level-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3) var(--ui-space-4) var(--ui-space-4);
+}
+
+.level-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-1);
+}
+
+.level-title {
+  font-family: var(--ui-font-display);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--ui-text-primary);
+  line-height: 1.2;
+}
+
+.level-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--material-thin);
+  border: 1px solid var(--glass-border);
+  color: var(--ui-text-secondary);
+}
+
+.level-status.unlocked {
+  color: var(--system-green);
+}
+
+.level-status.locked {
+  color: var(--system-gray);
+}
+
+.level-status.current {
+  color: var(--ui-accent);
+}
+
+.level-status.soon {
+  color: var(--system-orange);
+}
+
+.level-meta {
+  font-size: 14px;
+  color: var(--ui-text-secondary);
+}
+
+.level-card-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: var(--ui-space-2);
+}
+
+.level-card-actions .ui-button {
+  pointer-events: none;
+  min-width: 120px;
+}
+
+@media (max-width: 720px) {
+  .level-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .overlay-centered .overlay-header {

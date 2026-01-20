@@ -1,7 +1,7 @@
 :root {
   /* Fonts */
-  --ui-font: -apple-system, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --ui-font-display: -apple-system, "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --ui-font: -apple-system, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+  --ui-font-display: -apple-system, "SF Pro Display", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
 
   /* Apple HIG Colors - Light Mode Default */
   --system-blue: #007AFF;

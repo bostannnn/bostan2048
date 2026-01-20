@@ -17,7 +17,10 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 ## Phase 2: Game Modules (In Progress)
 - [x] 2048 module (ESM).
 - [x] 2048 Pixi renderer with HTML overlays.
-- [ ] Match-3 placeholder cartridge.
+- [x] 2048 level system (3 levels, unlock after 2048, per-level save state).
+- [x] Level select overlay (Level 4 coming soon banner, preview images).
+- [x] Per-level leaderboards (local keys + Firebase gameId per level).
+- [x] Match-3 cartridge (10 levels, targets + move limits).
 - [ ] Picross placeholder cartridge.
 
 ## Phase 3: Meta-Game (In Progress)
@@ -30,11 +33,22 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] UI polish (Liquid Glass styling, dark mode).
 - [x] Leaderboard UI (local saves + name capture, top-10 scroll list with hidden scrollbar, centered header/actions, hint removed).
 - [x] Input polish (full-height swipe surface on `.game-stage`, with bottom padding inside the swipe area; scroll/selection suppression in the 2048 view).
+- [x] Pause 2048 background effects when the view is inactive.
 - [ ] Shop wiring (catalog + inventory persistence).
 - [x] Cloud leaderboards (Firebase configured + local fallback).
 - [ ] Firestore composite index for leaderboards (if not created yet).
 - [ ] PWA caching strategy for ESM assets.
-- [ ] Navigation gating: keep nav hidden and coins UI suppressed until features are ready.
+- [ ] Navigation gating: coins UI suppressed until features are ready.
 - [ ] Audio system (Howler.js integration).
-- [ ] Animation tooling (GSAP for Match-3 and advanced UI transitions).
+- [x] Animation tooling (GSAP for Match-3 and advanced UI transitions).
 - [x] Confirm before starting a new 2048 game.
+- [x] GitHub Pages workflows (manual prod deploy + dev subpath).
+
+## Progress Report (2026-01-19)
+- Level system finalized: per-level assets, preview card layout, and per-level leaderboards.
+- Firebase migration tooling added (copy legacy `2048` scores to `2048-level-1`).
+- UI/input polish: emoji font fallback, leaderboard placeholder contrast, debounced button taps, score-addition cleanup.
+- Test harness added: `npm test` for 2048/leaderboard logic.
+- Match-3 module added with 10 levels and shared leaderboards.
+- Bottom nav now routes 2048, Match-3, City, and Shop (coins still hidden).
+- Pending: run `npm install` to update `package-lock.json` once registry access is available.

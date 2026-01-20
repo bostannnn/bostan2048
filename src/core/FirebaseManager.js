@@ -54,6 +54,7 @@ export class FirebaseManager {
             const { collection, addDoc, serverTimestamp } = this.modules;
             await addDoc(collection(this.db, "leaderboards"), {
                 gameId,
+                level: stats.level || null,
                 score,
                 playerName,
                 turns: Math.max(0, Math.floor(stats.turns || 0)),

@@ -5,7 +5,7 @@ export class GameManager {
   constructor(size, InputManager, Actuator, StorageManager, callbacks = {}) {
     this.size = size;
     this.inputManager = new InputManager();
-    this.storageManager = new StorageManager();
+    this.storageManager = StorageManager instanceof Function ? new StorageManager() : StorageManager;
     
     this.actuator = Actuator instanceof Function ? new Actuator() : Actuator; 
     
@@ -28,15 +28,15 @@ export class GameManager {
   destroy() {
     // Clean up input listeners to prevent double-firing events after restart
     if (this.inputManager && this.inputManager.destroy) {
-        this.inputManager.destroy();
+      this.inputManager.destroy();
     }
   }
 
   restart() {
     if (this.callbacks.onRestart) {
-        this.callbacks.onRestart();
+      this.callbacks.onRestart();
     } else {
-        this.reset();
+      this.reset();
     }
   }
   
@@ -91,7 +91,7 @@ export class GameManager {
     }
 
     if (this.callbacks.onEconomyRun) {
-        this.callbacks.onEconomyRun(hasState);
+      this.callbacks.onEconomyRun(hasState);
     }
 
     this.actuate();
@@ -130,7 +130,7 @@ export class GameManager {
     }
 
     if (this.callbacks.onScore) {
-        this.callbacks.onScore(this.score);
+      this.callbacks.onScore(this.score);
     }
 
     this.actuator.actuate(this.grid, {
@@ -319,18 +319,18 @@ export class GameManager {
       cell = { x: previous.x + vector.x, y: previous.y + vector.y };
     } while (this.grid.withinBounds(cell) && this.grid.cellAvailable(cell));
 
-      return {
-        farthest: previous,
-        next: cell,
-      };
-    }
+    return {
+      farthest: previous,
+      next: cell,
+    };
+  }
 
-    getStats() {
-      return {
-        turns: this.turnCount,
-        undos: this.undoCount,
-      };
-    }
+  getStats() {
+    return {
+      turns: this.turnCount,
+      undos: this.undoCount,
+    };
+  }
 
   movesAvailable() {
     return this.grid.cellsAvailable() || this.tileMatchesAvailable();

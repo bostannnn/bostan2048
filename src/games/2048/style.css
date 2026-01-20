@@ -97,6 +97,13 @@ header {
   padding: 12px 14px;
 }
 
+.title-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  align-items: flex-start;
+}
+
 h1 {
   font-family: var(--ui-font-display);
   font-size: 34px;
@@ -105,6 +112,14 @@ h1 {
   line-height: 1;
   color: var(--ui-text-primary);
   align-self: center;
+}
+
+.level-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ui-text-secondary);
+  padding: 4px 10px;
+  align-self: flex-start;
 }
 
 .scores {
@@ -221,6 +236,9 @@ h1 {
     justify-items: center;
     text-align: center;
     max-width: 100%;
+  }
+  .title-stack {
+    align-items: center;
   }
   h1 { font-size: 32px; }
   .scores { width: 100%; justify-content: center; }

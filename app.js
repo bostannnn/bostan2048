@@ -1,4 +1,5 @@
 import { Photo2048 } from './src/games/2048/index.js';
+import { Match3Game } from './src/games/match3/index.js';
 import { CityScene } from './city/src/CityScene.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
 import * as PIXI from 'pixi.js';
@@ -14,23 +15,60 @@ import '/core.js';
   const navButtons = [];
   let citySceneInstance = null;
   const state = {
-    match3Score: 0,
     shopCatalog: null,
     shopItemsById: {},
     cityItems: []
   };
-  const leaderboardManager = new LeaderboardManager({
-    gameId: "2048",
-    storageKey: "photo2048HighScores",
-    limit: 20,
-    firebaseManager: window.FirebaseManager
-  });
+  const leaderboardManagers = new Map();
   const playerNameKey = "arcadeCityPlayerName";
   let pendingScore = null;
 
   const games = {
-      '2048': new Photo2048()
+      '2048': new Photo2048(),
+      'match3': new Match3Game()
   };
+
+  let activeGameId = "2048";
+
+  function getActiveLevel(gameId = activeGameId) {
+    return games[gameId]?.getCurrentLevel?.() || 1;
+  }
+
+  function getLeaderboardConfig(gameId, levelId) {
+    if (gameId === "2048") {
+      return {
+        gameId: `2048-level-${levelId}`,
+        storageKey: `photo2048HighScores:level-${levelId}`,
+      };
+    }
+    if (gameId === "match3") {
+      return {
+        gameId: `match3-level-${levelId}`,
+        storageKey: `match3HighScores:level-${levelId}`,
+      };
+    }
+    return {
+      gameId: `${gameId}-level-${levelId}`,
+      storageKey: `${gameId}HighScores:level-${levelId}`,
+    };
+  }
+
+  function getLeaderboardManager(gameId, levelId) {
+    const key = `${gameId}:${levelId}`;
+    if (!leaderboardManagers.has(key)) {
+      const config = getLeaderboardConfig(gameId, levelId);
+      leaderboardManagers.set(
+        key,
+        new LeaderboardManager({
+          gameId: config.gameId,
+          storageKey: config.storageKey,
+          limit: 20,
+          firebaseManager: window.FirebaseManager
+        })
+      );
+    }
+    return leaderboardManagers.get(key);
+  }
 
   function showView(viewId) {
     document.body.dataset.view = viewId;
@@ -42,21 +80,31 @@ import '/core.js';
     });
     
     // Game Lifecycle Management
+    Object.entries(games).forEach(([id, game]) => {
+      if (id !== viewId) {
+        game.pause();
+      }
+    });
+
     if (games[viewId]) {
-        try {
-            if (!games[viewId].container) {
-                console.log(`Mounting game: ${viewId}`);
-                games[viewId].mount(views[viewId]);
-            } else {
-                console.log(`Resuming game: ${viewId}`);
-                games[viewId].resume();
-            }
-        } catch (err) {
-            console.error(`Failed to mount/resume game ${viewId}:`, err);
+      activeGameId = viewId;
+      try {
+        let action = null;
+        if (!games[viewId].container) {
+          console.log(`Mounting game: ${viewId}`);
+          action = games[viewId].mount(views[viewId]);
+        } else {
+          console.log(`Resuming game: ${viewId}`);
+          action = games[viewId].resume();
         }
-    } else {
-        // Pause other games if they are running?
-        Object.values(games).forEach(game => game.pause());
+        if (action && typeof action.then === "function") {
+          action.catch((err) => {
+            console.error(`Failed to mount/resume game ${viewId}:`, err);
+          });
+        }
+      } catch (err) {
+        console.error(`Failed to mount/resume game ${viewId}:`, err);
+      }
     }
 
     if (viewId === "city" && citySceneInstance && citySceneInstance.onShow) {
@@ -74,7 +122,7 @@ import '/core.js';
   }
 
   function setupViews() {
-    ["2048", "city", "games", "shop"].forEach((id) => {
+    ["2048", "match3", "city", "shop"].forEach((id) => {
       const el = document.getElementById(`view-${id}`);
       if (el) {
         views[id] = el;
@@ -82,39 +130,6 @@ import '/core.js';
     });
   }
 
-  function setupGameLaunchers() {
-    document.querySelectorAll("[data-launch]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const viewId = button.dataset.launch;
-        if (viewId) {
-          showView(viewId);
-        }
-      });
-    });
-  }
-
-  function setupMatch3Stub() {
-    const scoreEl = document.getElementById("match3-score");
-    const addButton = document.querySelector("[data-match3-add]");
-    const resetButton = document.querySelector("[data-match3-reset]");
-    if (!scoreEl || !addButton || !resetButton) return;
-
-    const updateScore = (next) => {
-      state.match3Score = Math.max(0, Math.floor(next));
-      scoreEl.textContent = state.match3Score.toLocaleString();
-      if (window.EconomyManager) {
-        window.EconomyManager.awardFromScore("match3", state.match3Score);
-      }
-    };
-
-    addButton.addEventListener("click", () => {
-      updateScore(state.match3Score + 200);
-    });
-
-    resetButton.addEventListener("click", () => {
-      updateScore(0);
-    });
-  }
 
   function setupPicrossStub() {
     const button = document.querySelector("[data-picross-complete]");
@@ -309,6 +324,8 @@ import '/core.js';
 
   const dateFormatter = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
   let openLeaderboardRef = null;
+  let closeLeaderboardRef = null;
+  let openLevelSelectRef = null;
 
   function setupSettingsOverlay() {
     const overlay = document.getElementById("settings-overlay");
@@ -381,7 +398,10 @@ import '/core.js';
     const hint = document.getElementById("leaderboard-hint");
     const status = document.getElementById("leaderboard-status");
     const tryAgainBtn = document.getElementById("leaderboard-try-again");
+    const levelsBtn = document.getElementById("leaderboard-levels");
     let currentMode = "default";
+    let leaderboardLevel = null;
+    let leaderboardGameId = null;
 
     if (!overlay) return;
 
@@ -391,8 +411,9 @@ import '/core.js';
     }
 
     function restartGame() {
-      const restartBtn = document.querySelector("#view-2048 .restart-button");
-      if (restartBtn) restartBtn.click();
+      const gameId = leaderboardGameId || activeGameId;
+      const game = games[gameId];
+      game?.requestRestart?.({ confirm: false });
       closeLeaderboard();
     }
 
@@ -417,9 +438,11 @@ import '/core.js';
       const list = document.getElementById("high-score-list");
       if (!list) return;
       const maxRows = 10;
-      const { local, remote } = await leaderboardManager.fetchScores(maxRows);
+      const activeGame = leaderboardGameId || activeGameId;
+      const activeLevel = leaderboardLevel || getActiveLevel(activeGame);
+      const manager = getLeaderboardManager(activeGame, activeLevel);
+      const { local, remote } = await manager.fetchScores(maxRows);
       const hasFirebase = !!(window.FirebaseManager && window.FirebaseManager.enabled);
-      const indexRequired = !!(window.FirebaseManager && window.FirebaseManager.indexRequired);
       const hasRemote = Array.isArray(remote) && remote.length > 0;
       const rows = (hasFirebase && hasRemote ? remote : local).slice(0, maxRows);
 
@@ -460,14 +483,24 @@ import '/core.js';
     async function openLeaderboard(options = {}) {
       currentMode = options.mode || "default";
       overlay.classList.remove("hidden");
+      leaderboardGameId = options.gameId || activeGameId;
+      leaderboardLevel = options.level || getActiveLevel(leaderboardGameId);
       if (hint) {
         hint.textContent = "";
         hint.classList.add("hidden");
       }
       if (options.score !== undefined) {
-        pendingScore = { score: Number(options.score) || 0, turns: Number(options.turns) || 0, undos: Number(options.undos) || 0, date: Date.now() };
+        pendingScore = {
+          gameId: leaderboardGameId,
+          level: leaderboardLevel,
+          score: Number(options.score) || 0,
+          turns: Number(options.turns) || 0,
+          undos: Number(options.undos) || 0,
+          date: Date.now()
+        };
       }
-      const shouldShowEntry = options.showEntryForm ?? (pendingScore && leaderboardManager.isHighScore(pendingScore.score));
+      const manager = getLeaderboardManager(leaderboardGameId, leaderboardLevel);
+      const shouldShowEntry = options.showEntryForm ?? (pendingScore && manager.isHighScore(pendingScore.score));
       if (shouldShowEntry && pendingLabel && pendingScore) {
         pendingLabel.textContent = pendingScore.score.toLocaleString();
       }
@@ -484,6 +517,9 @@ import '/core.js';
       if (tryAgainBtn) {
         tryAgainBtn.classList.toggle("hidden", !(currentMode === "gameover" || currentMode === "win"));
       }
+      if (levelsBtn) {
+        levelsBtn.classList.toggle("hidden", !(currentMode === "gameover" || currentMode === "win"));
+      }
       await renderLeaderboard();
     }
 
@@ -499,9 +535,13 @@ import '/core.js';
       setStatus("Saving score...", null);
 
       try {
-        const result = await leaderboardManager.submitScore(name, pendingScore.score, {
+        const scoreGameId = pendingScore.gameId || activeGameId;
+        const scoreLevel = pendingScore.level || getActiveLevel(scoreGameId);
+        const manager = getLeaderboardManager(scoreGameId, scoreLevel);
+        const result = await manager.submitScore(name, pendingScore.score, {
           turns: pendingScore.turns || 0,
           undos: pendingScore.undos || 0,
+          level: scoreLevel,
         });
         pendingScore = null;
         toggleEntry(false);
@@ -524,7 +564,11 @@ import '/core.js';
       overlay.classList.add("hidden");
       setStatus("", null);
       currentMode = "default";
+      leaderboardLevel = null;
+      leaderboardGameId = null;
     }
+
+    closeLeaderboardRef = closeLeaderboard;
 
     if (closeBtn) {
       closeBtn.addEventListener("click", closeLeaderboard);
@@ -532,6 +576,12 @@ import '/core.js';
 
     if (tryAgainBtn) {
       tryAgainBtn.addEventListener("click", restartGame);
+    }
+
+    if (levelsBtn) {
+      levelsBtn.addEventListener("click", () => {
+        openLevelSelectRef?.();
+      });
     }
 
     if (saveBtn) {
@@ -555,19 +605,147 @@ import '/core.js';
     openLeaderboardRef = openLeaderboard;
   }
 
-  function setupGameOverListener() {
-    const view = document.getElementById("view-2048");
-    if (!view) return;
+  function setupLevelSelectOverlay() {
+    const overlay = document.getElementById("level-select");
+    const list = document.getElementById("level-list");
+    const closeBtn = document.getElementById("close-level-select");
+    const subtitleEl = document.getElementById("level-select-subtitle");
+    if (!overlay || !list) return null;
 
-    view.addEventListener("game:over", (event) => {
-      const score = Number(event?.detail?.score) || 0;
-      const turns = Number(event?.detail?.stats?.turns) || 0;
-      const undos = Number(event?.detail?.stats?.undos) || 0;
-      pendingScore = { score, turns, undos, date: Date.now() };
-      const qualifies = true; // Always allow name entry on game over
-      if (openLeaderboardRef) {
-        openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode: "gameover" });
+    const close = () => overlay.classList.add("hidden");
+
+    const renderLevels = () => {
+      const game = games[activeGameId] || games["2048"];
+      if (!game || !game.getLevelSummary) return;
+      const meta = game.getLevelSelectMeta ? game.getLevelSelectMeta() : null;
+      if (subtitleEl) {
+        subtitleEl.textContent = meta?.subtitle || "Select a level.";
       }
+      const levels = game.getLevelSummary();
+      list.innerHTML = "";
+
+      levels.forEach((level) => {
+        const card = document.createElement("div");
+        card.className = `level-card ${level.status}`;
+        card.dataset.level = String(level.id);
+        card.dataset.locked = level.unlocked ? "false" : "true";
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", level.unlocked ? "0" : "-1");
+        card.setAttribute("aria-disabled", level.unlocked ? "false" : "true");
+
+        const bestScore = Number(level.bestScore || 0).toLocaleString();
+        const statusLabel = level.status === "current"
+          ? "Current"
+          : level.status === "locked"
+            ? "Locked"
+            : "Unlocked";
+        const previewImage = level.previewImage
+          ? `<img src="${level.previewImage}" alt="${level.displayTitle} preview" loading="lazy">`
+          : "";
+        const actionLabel = level.unlocked ? "Start" : "Locked";
+        const actionTone = level.unlocked ? "gold" : "secondary";
+
+        card.innerHTML = `
+          <div class="level-preview">${previewImage}</div>
+          <div class="level-card-body">
+            <div class="level-card-header">
+              <div class="level-title">${level.displayTitle}</div>
+              <div class="level-status ${level.status}">${statusLabel}</div>
+            </div>
+            <div class="level-meta">Best: ${bestScore}</div>
+            <div class="level-card-actions">
+              <button type="button" class="ui-button small ${actionTone}">${actionLabel}</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      if (meta?.comingSoon) {
+        const comingSoon = document.createElement("div");
+        comingSoon.className = "level-card level-card-soon";
+        comingSoon.innerHTML = `
+          <div class="level-preview level-preview-soon">
+            <span>${meta.comingSoon.label}</span>
+          </div>
+          <div class="level-card-body">
+            <div class="level-card-header">
+              <div class="level-title">${meta.comingSoon.title}</div>
+              <div class="level-status soon">Soon</div>
+            </div>
+            <div class="level-meta">${meta.comingSoon.meta}</div>
+            <div class="level-card-actions">
+              <button type="button" class="ui-button small secondary">Locked</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(comingSoon);
+      }
+    };
+
+    const open = () => {
+      renderLevels();
+      overlay.classList.remove("hidden");
+    };
+
+    const handleLevelActivate = (target) => {
+      if (!target || target.dataset.locked === "true") return;
+      const levelId = Number(target.dataset.level);
+      const game = games[activeGameId] || games["2048"];
+      const changed = game?.setLevel?.(levelId);
+      if (changed || levelId === game?.getCurrentLevel?.()) {
+        close();
+        closeLeaderboardRef?.();
+      }
+    };
+
+    list.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-level]");
+      handleLevelActivate(target);
+    });
+
+    list.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target.closest("[data-level]");
+      if (!target) return;
+      event.preventDefault();
+      handleLevelActivate(target);
+    });
+
+    if (closeBtn) closeBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+
+    document.addEventListener("click", (event) => {
+      const trigger = event.target.closest && event.target.closest("#level-select-button");
+      if (trigger) {
+        event.preventDefault();
+        open();
+      }
+    });
+
+    openLevelSelectRef = open;
+    return open;
+  }
+
+  function setupGameOverListener() {
+    ["2048", "match3"].forEach((gameId) => {
+      const view = document.getElementById(`view-${gameId}`);
+      if (!view) return;
+
+      view.addEventListener("game:over", (event) => {
+        const score = Number(event?.detail?.score) || 0;
+        const turns = Number(event?.detail?.stats?.turns) || 0;
+        const undos = Number(event?.detail?.stats?.undos) || 0;
+        const mode = event?.detail?.mode || "gameover";
+        const level = event?.detail?.level || getActiveLevel(gameId);
+        pendingScore = { gameId, level, score, turns, undos, date: Date.now() };
+        const qualifies = true;
+        if (openLeaderboardRef) {
+          openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode, level, gameId });
+        }
+      });
     });
   }
 
@@ -620,18 +798,18 @@ import '/core.js';
       window.FirebaseManager.configure(window.firebaseConfig);
     }
     setupLeaderboard();
+    setupLevelSelectOverlay();
     setupSettingsOverlay();
     setupViews();
     const openConfirm = setupConfirmOverlay();
     setupGameOverListener();
     setupNav();
-    setupGameLaunchers();
-    setupMatch3Stub();
     setupPicrossStub();
 
     if (openConfirm) {
-      const game = games["2048"];
-      game?.setConfirmHandler?.(openConfirm);
+      Object.values(games).forEach((game) => {
+        game?.setConfirmHandler?.(openConfirm);
+      });
     }
 
     const cityScene = setupCityScene();

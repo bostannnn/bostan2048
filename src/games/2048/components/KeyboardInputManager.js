@@ -22,6 +22,7 @@ export class KeyboardInputManager {
     this.touchStartClientY = 0;
     this.hasSwiped = false;
     this.gameContainer = null;
+    this.lastPointerUpTime = 0;
 
     this.listen();
   }
@@ -189,22 +190,31 @@ export class KeyboardInputManager {
   isOverlayActive() {
     var leaderboard = document.getElementById("leaderboard");
     if (leaderboard && !leaderboard.classList.contains("hidden")) return true;
+    var levelSelect = document.getElementById("level-select");
+    if (levelSelect && !levelSelect.classList.contains("hidden")) return true;
+    var confirmOverlay = document.getElementById("confirm-overlay");
+    if (confirmOverlay && !confirmOverlay.classList.contains("hidden")) return true;
+    var settings = document.getElementById("settings-overlay");
+    if (settings && !settings.classList.contains("hidden")) return true;
     var themeSelector = document.getElementById("theme-selector");
     if (themeSelector && !themeSelector.classList.contains("hidden")) return true;
     return false;
   }
 
   restart(event) {
+    if (this.shouldIgnoreClick(event)) return;
     if (event) event.preventDefault();
     this.emit("restart");
   }
 
   undo(event) {
+    if (this.shouldIgnoreClick(event)) return;
     if (event) event.preventDefault();
     this.emit("undo");
   }
 
   keepPlaying(event) {
+    if (this.shouldIgnoreClick(event)) return;
     if (event) event.preventDefault();
     this.emit("keepPlaying");
   }
@@ -221,5 +231,17 @@ export class KeyboardInputManager {
     if (!button) return;
     button.removeEventListener("click", fn);
     button.removeEventListener(this.eventTouchend, fn);
+  }
+
+  shouldIgnoreClick(event) {
+    if (!event) return false;
+    if (event.type === this.eventTouchend) {
+      this.lastPointerUpTime = Date.now();
+      return false;
+    }
+    if (event.type === "click") {
+      return Date.now() - this.lastPointerUpTime < 400;
+    }
+    return false;
   }
 }

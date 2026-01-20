@@ -7,7 +7,7 @@ Arcade City uses a **Hub & Spoke** model implemented with modern JavaScript **ES
 
 ### 1.1 The Console (App Shell)
 `app.js` acts as the operating system. It handles:
-*   **Routing:** Switching between `city`, `2048`, `games`, and `shop` views.
+*   **Routing:** Switching between `city`, `2048`, `match3`, and `shop` views.
 *   **Lifecycle:** Orchestrating `mount`, `start`, `pause`, and `resume` calls on active game modules.
 *   **Global State:** Managing `EconomyManager` (coins/inventory) via `core.js`.
 *   **Leaderboards:** Opens the leaderboard sheet on `game:over` events and pipes data through `LeaderboardManager` (local-first, Firebase-enabled).
@@ -17,6 +17,7 @@ Each game is a standalone module in `src/games/`.
 *   **Interface:** All games must inherit from `src/core/GameInterface.js`.
 *   **Isolation:** Games manage their own DOM injection and internal logic (e.g., `GameManager`, `Grid`).
 *   **Communication:** Games talk to the Shell via standard JS events or provided callbacks.
+*   **Match-3:** Lives in `src/games/match3/` with PixiJS v8 rendering and per-level targets.
 
 ## 2. Component API Reference
 
@@ -39,7 +40,7 @@ Located at `src/core/LeaderboardManager.js`, used by `app.js`:
 *   `submitScore(name, score, stats)`: Saves locally and to Firebase (when enabled) with `score`, `turns`, `undos`.
 *   `fetchScores(limit)`: Returns `{ local, remote }` score arrays (remote only when Firebase is configured).
 *   `isHighScore(score)`: Determines if an entry should prompt the save form.
-*   Storage keys: defaults to `photo2048HighScores` for the 2048 cartridge.
+*   Storage keys: `photo2048HighScores:level-<n>` per 2048 level.
 
 ## 2.5 Runtime Contracts
 Globals (`window.*`):
@@ -55,18 +56,22 @@ Storage keys (localStorage):
 *   `arcadeCityTheme`
 *   `arcadeCityLayout`, `arcadeCityLayout:seed`
 *   `arcadeCityPlayerName`
-*   `photo2048HighScores`
-*   `bestScore`, `gameState`, `undoState`
+*   `photo2048HighScores:level-<n>`
+*   `photo2048:level-<n>:bestScore`, `photo2048:level-<n>:gameState`, `photo2048:level-<n>:undoState`
+*   `match3HighScores:level-<n>`
+*   `match3:level-<n>:bestScore`, `match3:level-<n>:gameState`
 
 Events:
-*   `game:over` (CustomEvent with `{ score, stats: { turns, undos } }`)
+*   `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode? }`)
 *   `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
 
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
 *   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
-*   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI; Match-3 planned for PixiJS. Pixi renders with auto-density at device pixel ratio to keep tile portraits crisp.
-*   **Liquid Glass:** `ui/theme.css` carries aurora gradients plus `--motion-*` and `--ui-space-*` tokens; `ui/components.css` provides glass cards/pills, overlay helpers (`.overlay-centered`, `.overlay-title`, `.overlay-subtitle`, `.overlay-actions`, `.overlay-form`), leaderboard components (`.leaderboard-list`, `.leader-card`, `.leaderboard-entry`, `.leaderboard-status`, `.leaderboard-hero`, `.leaderboard-input`), and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
+*   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI. Match-3 uses PixiJS v8 with asset-based gem sprites and shared HTML overlays. Pixi renders with auto-density at device pixel ratio to keep tiles crisp. Tile portraits load per level from `public/assets/levels/level-<n>/`.
+*   **Liquid Glass:** `ui/theme.css` carries aurora gradients plus `--motion-*` and `--ui-space-*` tokens; `ui/components.css` provides glass cards/pills, overlay helpers (`.overlay-centered`, `.overlay-title`, `.overlay-subtitle`, `.overlay-actions`, `.overlay-form`), leaderboard components (`.leaderboard-list`, `.leader-card`, `.leaderboard-entry`, `.leaderboard-status`, `.leaderboard-hero`, `.leaderboard-input`), level select components (`.level-list`, `.level-card`, `.level-status`), and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
+*   **Typography:** Font stacks include emoji-capable fallbacks for icon buttons.
+*   **Assets:** Match-3 uses Kenney Puzzle Pack gem sprites and placeholder previews/backgrounds.
 
 ## 3.5 UI Component Guidelines
 - Prefer the shared button variants: ui-button (primary), ui-button secondary (glass), ui-button gold (gold CTA), and ui-button mini secondary (44px circular icon chips).
@@ -75,21 +80,35 @@ Events:
 - For leaderboards, use the .leader-card structure with .lb-rank, .lb-player (name + date), .lb-score, and .lb-stat-stack for stats (undos/turns). Add stats by extending the stack instead of altering the layout.
 
 ### 3.6 Animation & Audio
-* **Complex Motion:** GSAP is planned for Match-3 sequencing (swap/drop cascades) and complex UI transitions, but not yet integrated.
+* **Complex Motion:** GSAP drives Match-3 sequencing (swap, drop, spawn) and is available for complex UI transitions.
 * **Audio:** Howler.js is planned for audio sprites and background loops, but not yet integrated.
 * **Haptics:** `navigator.vibrate()` is not wired yet; future work may route haptics through `GameInterface`.
+
+### 3.7 Tooling & Tests
+* **Tests:** `npm test` runs a lightweight Node-based harness for 2048 and leaderboard logic.
+* **Deployment:** GitHub Actions deploys GitHub Pages from `gh-pages` (manual prod, auto dev). Builds use `VITE_BASE` and `VITE_BUILD_TAG` to set the base path and DEV PWA icon.
 
 ## 4. Firebase / Leaderboards
 *   Config: `window.firebaseConfig` is defined in `index.html` and loaded before `app.js`; replace with your project keys as needed.
 *   Transport: `FirebaseManager` loads Firebase from the CDN to avoid bundling dependencies.
 *   Fallback: If Firebase is absent/offline, leaderboard reads/writes remain local only.
-*   Stored fields: `name`, `score`, `turns`, `undos`, `timestamp`.
+*   Scoping: leaderboards use `gameId` per level (`2048-level-<n>`), with local keys `photo2048HighScores:level-<n>`.
+*   Stored fields: `name`, `score`, `turns`, `undos`, `level`, `timestamp`.
 *   Index: Firestore requires a composite index on `leaderboards` for `gameId (ASC)` + `score (DESC)` to satisfy the cloud query; the console will link to create it if missing.
 *   UI: The leaderboard sheet renders the top 10 entries in a scrollable list (scrollbar hidden) with centered titles/actions, a hero pending-score display, and no hint line.
+*   Match-3 uses `match3-level-<n>` gameIds and records `turns` with `undos` set to 0.
 
 ## 5. UI State (Current)
-*   Active surface: 2048 only. Bottom navigation is hidden; coins UI is suppressed until the economy/city/shop flows are production-ready.
+*   Active surface: 2048 and Match-3. Bottom navigation is visible; coins UI is suppressed until the economy/city/shop flows are production-ready.
 *   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).
-*   Restart: the New Game action opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.
+*   Performance: 2048 background effects pause when the view is inactive.
+*   Levels: 2048 ships with three levels; Match-3 ships with ten levels. The next level unlocks after hitting the prior target.
+*   Level select: both games use the shared level selector overlay and Levels header button.
+*   Restart: restarting opens a confirm overlay (Yes = gold, No = secondary, no close icon) before resetting the run.
+
+## 6. Level Configuration
+*   The `LEVELS` list in `src/games/2048/index.js` is the source of truth for level id, display title, asset folder, and preview image.
+*   Each level's tile portraits live under `public/assets/levels/level-<n>/` and must include `{2..32768}.jpg` plus a preview image (currently `2048.jpg`).
+*   The `LEVELS` list in `src/games/match3/index.js` is the source of truth for board size, color count, target score, and moves.

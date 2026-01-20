@@ -1,9 +1,15 @@
 export class EffectManager {
         constructor(containerSelector) {
         this.container = document.querySelector(containerSelector);
+        if (!this.container) {
+            this.disabled = true;
+            return;
+        }
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
         this.particles = [];
+        this.running = false;
+        this.frameId = null;
         this.resize();
 
         this.canvas.style.position = 'absolute';
@@ -13,8 +19,10 @@ export class EffectManager {
         this.canvas.style.zIndex = '999';
         this.container.appendChild(this.canvas);
 
-        window.addEventListener('resize', () => this.resize());
-        this.animate();
+        this.handleResize = () => this.resize();
+        window.addEventListener('resize', this.handleResize);
+        this.animate = this.animate.bind(this);
+        this.start();
     }
 
     resize() {
@@ -34,6 +42,20 @@ export class EffectManager {
 
     explodeAt(x, y, value) {
         this.createParticles(x, y, value);
+    }
+
+    start() {
+        if (this.disabled || this.running) return;
+        this.running = true;
+        this.frameId = requestAnimationFrame(this.animate);
+    }
+
+    stop() {
+        this.running = false;
+        if (this.frameId) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        }
     }
 
     rewind() {
@@ -124,6 +146,7 @@ export class EffectManager {
     }
 
     animate() {
+        if (!this.running) return;
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.globalCompositeOperation = 'lighter';
 
@@ -137,7 +160,17 @@ export class EffectManager {
         }
         this.ctx.globalCompositeOperation = 'source-over';
 
-        requestAnimationFrame(() => this.animate());
+        this.frameId = requestAnimationFrame(this.animate);
+    }
+
+    destroy() {
+        this.stop();
+        if (this.handleResize) {
+            window.removeEventListener('resize', this.handleResize);
+        }
+        if (this.canvas && this.canvas.parentNode) {
+            this.canvas.parentNode.removeChild(this.canvas);
+        }
     }
 }
 

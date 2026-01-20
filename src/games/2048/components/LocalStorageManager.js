@@ -1,10 +1,20 @@
 export class LocalStorageManager {
-  constructor() {
-    this.bestScoreKey = "bestScore";
-    this.gameStateKey = "gameState";
-    this.undoStateKey = "undoState";
+  constructor(options = {}) {
+    const namespace = options.namespace ? `${options.namespace}:` : "";
+    this.bestScoreKey = `${namespace}bestScore`;
+    this.gameStateKey = `${namespace}gameState`;
+    this.undoStateKey = `${namespace}undoState`;
+    this.legacyKeys = {
+      bestScore: "bestScore",
+      gameState: "gameState",
+      undoState: "undoState",
+    };
     var supported = this.localStorageSupported();
     this.storage = supported ? window.localStorage : window.fakeStorage;
+
+    if (options.migrateLegacy && namespace) {
+      this.migrateLegacyKeys();
+    }
   }
 
   localStorageSupported() {
@@ -45,7 +55,7 @@ export class LocalStorageManager {
     }, 500);
   }
 
-clearGameState() {
+  clearGameState() {
     // 1. Cancel the pending save! 
     // Otherwise, the timer from your last move might fire AFTER game over, 
     // reviving the dead game.
@@ -78,6 +88,21 @@ clearGameState() {
 
   clearUndoState() {
     this.storage.removeItem(this.undoStateKey);
+  }
+
+  migrateLegacyKeys() {
+    const mappings = [
+      [this.legacyKeys.bestScore, this.bestScoreKey],
+      [this.legacyKeys.gameState, this.gameStateKey],
+      [this.legacyKeys.undoState, this.undoStateKey],
+    ];
+    mappings.forEach(([fromKey, toKey]) => {
+      if (this.storage.getItem(toKey)) return;
+      const legacyValue = this.storage.getItem(fromKey);
+      if (legacyValue !== null && legacyValue !== undefined) {
+        this.storage.setItem(toKey, legacyValue);
+      }
+    });
   }
 }
 

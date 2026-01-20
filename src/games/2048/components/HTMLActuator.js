@@ -152,6 +152,12 @@ export class HTMLActuator {
       addition.textContent = "+" + difference;
 
       this.scoreContainer.appendChild(addition);
+
+      addition.addEventListener("animationend", () => {
+        if (addition.parentNode) {
+          addition.parentNode.removeChild(addition);
+        }
+      });
     }
   }
 

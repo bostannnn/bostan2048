@@ -1,6 +1,6 @@
 # Arcade City - Source of Truth
 
-Doc version: 1.0
+Doc version: 1.2
 
 This document is the canonical spec for the project. If any other document or UI
 behavior conflicts with this file, this file wins. Other docs should summarize
@@ -8,9 +8,13 @@ and link here.
 
 ## Current Product Scope (Playable Today)
 - PWA shell with the 2048 cartridge fully playable.
+- Match-3 cartridge is playable with 10 levels, target scores, and move limits.
+- 2048 includes 3 levels with per-level save state; the next level unlocks after reaching 2048, and a Level 4 "coming soon" card is shown.
+- The 2048 header uses a Levels button (replacing New Game) that opens the level select overlay, and game-over uses Try Again + Levels actions.
+- Level tile portraits load from `public/assets/levels/level-<n>/` and the level select overlay shows a preview image per level (currently `2048.jpg`).
 - City view is functional and uses PixiJS, but lives in a legacy folder.
-- Games menu and shop view exist in the UI, but only 2048 is meant for users.
-- Bottom navigation and coins chip are currently hidden to gate unfinished flows.
+- Navigation includes direct access to 2048, Match-3, City, and Shop.
+- Bottom navigation is visible; the coins chip remains hidden to gate unfinished flows.
 - Settings live in the settings overlay (theme toggle, PWA refresh, dev tools).
 - Leaderboards work locally and sync to Firebase using the configured project.
 
@@ -18,7 +22,8 @@ and link here.
 - `app.js` is the shell: routing, lifecycle (`mount`, `start`, `pause`, `resume`),
   and global overlays (leaderboard, settings).
 - `src/core/GameInterface.js` defines the required lifecycle hooks.
-- 2048 lives at `src/games/2048/` with PixiJS v8 board rendering and HTML UI.
+- 2048 lives at `src/games/2048/` with PixiJS v8 board rendering and HTML UI; the `LEVELS` list in `src/games/2048/index.js` defines level metadata and asset folders.
+- Match-3 lives at `src/games/match3/` with PixiJS v8 board rendering and HTML UI; the `LEVELS` list in `src/games/match3/index.js` defines level metadata.
 - City rendering is currently in `city/src/CityScene.js` (legacy), with plans to
   move into `src/games/city/` when modularized.
 
@@ -35,10 +40,12 @@ and link here.
   - `arcadeCityTheme`
   - `arcadeCityLayout`, `arcadeCityLayout:seed`
   - `arcadeCityPlayerName`
-  - `photo2048HighScores`
-  - `bestScore`, `gameState`, `undoState`
+  - `photo2048HighScores:level-<n>`
+  - `photo2048:level-<n>:bestScore`, `photo2048:level-<n>:gameState`, `photo2048:level-<n>:undoState`
+  - `match3HighScores:level-<n>`
+  - `match3:level-<n>:bestScore`, `match3:level-<n>:gameState`
 - Events:
-  - `game:over` (CustomEvent with `{ score, stats: { turns, undos } }`)
+  - `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode? }`)
   - `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
 
 ## UI / Design System
@@ -56,24 +63,29 @@ and link here.
 
 ## Technical Stack
 - Rendering: PixiJS v8 for canvas scenes (2048 board, City), HTML/CSS for UI.
-- Animation: PixiJS-driven tweens for board motion, CSS animations/transitions for
-  UI; GSAP is reserved for complex sequences (e.g., Match-3) when introduced.
+- Animation: GSAP drives Match-3 board motion (swaps, drops, spawns), PixiJS
+  handles rendering, and CSS animations/transitions cover UI polish.
 - Audio: Howler.js is the planned audio system (not yet integrated).
+- Tooling: Firebase Admin SDK is used for one-off leaderboard migration scripts.
+- Art: Kenney Puzzle Pack assets provide match-3 gem sprites and placeholders.
 
 ## Input & Interaction
 - 2048 uses pointer events on `.game-stage` with `touch-action: none` so swipes
   register across the full play area.
 - Header buttons remain tappable while swipes target the game stage.
+- Match-3 uses pointer input on the match-3 board to swap adjacent tiles.
 
 ## Leaderboards
-- Local scores saved under `photo2048HighScores` with player name cached as
+- Local scores saved per level under `photo2048HighScores:level-<n>` with player name cached as
   `arcadeCityPlayerName`.
 - 2048 dispatches `game:over` with `{ score, stats: { turns, undos } }`.
 - `LeaderboardManager` supports local-first storage and optional Firebase sync.
+- Firebase entries include a `level` field; leaderboards are scoped by `gameId` (`2048-level-<n>`).
+- Match-3 leaderboards use `match3-level-<n>` and record `turns` with `undos` set to 0.
 
 ## Economy (Local Only For Now)
 - `core.js` provides `EconomyManager` and `AppBus`.
-- 2048 awards coins based on score; Match-3/Picross stubs exist for later.
+- 2048 and Match-3 award coins based on score; Picross stubs exist for later.
 - Coins UI is currently hidden; economy events still fire for future reuse.
 
 ## PWA (Manifest + Service Worker)
