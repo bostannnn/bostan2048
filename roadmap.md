@@ -24,8 +24,9 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [ ] Picross placeholder cartridge.
 
 ## Phase 3: Meta-Game (In Progress)
-- [x] City engine (PixiJS v8 isometric grid, legacy implementation).
-- [ ] Move CityScene into `src/games/city/` cartridge.
+- [x] City engine (PixiJS v8 isometric grid).
+- [x] Move CityScene into `src/games/city/` cartridge.
+- [x] Resolve City asset URLs against the active base path.
 - [ ] Building placement logic tied to inventory rules.
 
 ## Phase 4: Economy & Polish (Pending)
@@ -38,7 +39,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Cloud leaderboards (Firebase configured + local fallback).
 - [ ] Firestore composite index for leaderboards (if not created yet).
 - [ ] PWA caching strategy for ESM assets.
-- [ ] Navigation gating: coins UI suppressed until features are ready.
+- [x] Emoji-labeled score chips with the coins UI placed left of the settings icon in the 2048 header.
 - [ ] Audio system (Howler.js integration).
 - [x] Animation tooling (GSAP for Match-3 and advanced UI transitions).
 - [x] Confirm before starting a new 2048 game.

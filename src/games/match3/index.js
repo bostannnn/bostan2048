@@ -441,7 +441,12 @@ export class Match3Game extends GameInterface {
       this.hintTimer = null;
     }
     this.renderer?.clearHint();
-    if (this.score > this.bestScore && this.storage) {
+    const level = this.getLevelConfig(this.currentLevel);
+    if (isWin && this.storage) {
+      const nextBest = Math.max(this.bestScore, this.score, level?.target ?? 0);
+      this.storage.setBestScore(nextBest);
+      this.bestScore = nextBest;
+    } else if (this.score > this.bestScore && this.storage) {
       this.storage.setBestScore(this.score);
       this.bestScore = this.score;
     }
@@ -516,7 +521,11 @@ export class Match3Game extends GameInterface {
     const prev = this.getLevelConfig(levelId - 1);
     if (!prev) return false;
     const bestScore = this.getBestScore(levelId - 1);
-    return bestScore >= prev.target;
+    if (bestScore >= prev.target) return true;
+    if (levelId - 1 === this.currentLevel) {
+      return this.score >= prev.target;
+    }
+    return false;
   }
 
   getLevelSummary() {
@@ -647,22 +656,22 @@ export class Match3Game extends GameInterface {
           </div>
           <div class="scores match3-scores">
             <div class="score-container glass-pill" data-label="Score">
-              <span class="score-label">Score</span>
+              <span class="score-label">⭐ Score</span>
               <span id="match3-score" class="score-value">0</span>
             </div>
             <div class="score-container glass-pill" data-label="Target">
-              <span class="score-label">Target</span>
+              <span class="score-label">🎯 Target</span>
               <span id="match3-target" class="score-value">0</span>
             </div>
             <div class="score-container glass-pill" data-label="Moves">
-              <span class="score-label">Moves</span>
+              <span class="score-label">👣 Moves</span>
               <span id="match3-moves" class="score-value">0</span>
             </div>
             <div class="score-container glass-pill" data-label="Best">
-              <span class="score-label">Best</span>
+              <span class="score-label">🏆 Best</span>
               <span id="match3-best" class="score-value">0</span>
             </div>
-            <button id="settings-button" class="ui-button secondary small settings-inline" aria-label="Settings">Settings</button>
+            <button id="settings-button" class="ui-button secondary small icon-only settings-inline" aria-label="Settings" title="Settings">⚙️</button>
           </div>
           <div class="header-buttons">
             <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>

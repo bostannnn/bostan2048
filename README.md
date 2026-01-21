@@ -60,8 +60,8 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 
 ### Folder Structure
 *   `src/core/`: `GameInterface.js`, `ThemeManager.js`, `FirebaseManager.js`, `LeaderboardManager.js`.
-*   `src/games/`: Modular game folders (currently `2048`, `match3`).
-*   `city/src/CityScene.js`: Legacy City renderer (to be modularized later).
+*   `src/games/`: Modular game folders (currently `2048`, `match3`, `city`).
+*   `src/games/city/CityScene.js`: City renderer + input handling.
 *   `app.js`: The central router and lifecycle manager.
 *   `ui/`: Global design tokens and shared components.
 *   `src/games/2048/`: Photo 2048 with PixiJS v8 board rendering, HTML overlay UI, undo, coins, and leaderboard hooks.
@@ -87,7 +87,7 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   Match-3 leaderboards use `match3HighScores:level-<n>` with `turns` (undos remain 0).
 
 ## Current Scope
-*   2048 and Match-3 are playable cartridges; the bottom nav exposes 2048, Match-3, City, and Shop while the coins chip remains hidden.
+*   2048 and Match-3 are playable cartridges; the bottom nav exposes 2048, Match-3, City, and Shop with emoji-labeled score chips and the coins chip placed left of the settings icon in the 2048 header.
 *   Settings are accessible via the settings overlay (theme toggle, PWA refresh, dev tools).
 *   Mobile swipes are handled with pointer events on a full-height `.game-stage` surface (`touch-action: none`), keeping the bottom padding inside the stage so the space below the board still registers moves while header buttons remain tappable.
 *   The 2048 view locks app scrolling and suppresses accidental tap highlights/text selection; text input remains selectable in overlays.
@@ -102,6 +102,7 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   Match-3 uses Kenney Puzzle Pack gem sprites and placeholder previews/backgrounds.
 *   Match-3 supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic, auto-shuffles on dead boards, richer clear/cascade visuals with drop-in spawns, reduced-motion compliance, and ignores stale saved runs.
 *   Match-3 scoring includes combo multipliers + streak bonuses, and the game-over sheet shows an end-of-level summary.
+*   City asset URLs resolve against the active base path to support subpath deployments (e.g., GitHub Pages).
 
 ## Firebase Integration (Leaderboards)
 Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.

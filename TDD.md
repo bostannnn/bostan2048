@@ -18,6 +18,7 @@ Each game is a standalone module in `src/games/`.
 *   **Isolation:** Games manage their own DOM injection and internal logic (e.g., `GameManager`, `Grid`).
 *   **Communication:** Games talk to the Shell via standard JS events or provided callbacks.
 *   **Match-3:** Lives in `src/games/match3/` with PixiJS v8 rendering and per-level targets.
+*   **City:** Lives in `src/games/city/` with PixiJS v8 isometric rendering and placement UI.
 
 ## 2. Component API Reference
 
@@ -67,7 +68,7 @@ Events:
 
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
-*   **City:** PixiJS v8 (Canvas) for isometric performance; currently implemented in `city/src/CityScene.js` (legacy).
+*   **City:** PixiJS v8 (Canvas) for isometric performance; implemented in `src/games/city/CityScene.js` with asset URLs resolved against the active base path.
 *   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI. Match-3 uses PixiJS v8 with asset-based gem sprites and shared HTML overlays. Pixi renders with auto-density at device pixel ratio to keep tiles crisp. Tile portraits load per level from `public/assets/levels/level-<n>/`.
 *   **Liquid Glass:** `ui/theme.css` carries aurora gradients plus `--motion-*` and `--ui-space-*` tokens; `ui/components.css` provides glass cards/pills, overlay helpers (`.overlay-centered`, `.overlay-title`, `.overlay-subtitle`, `.overlay-actions`, `.overlay-form`), leaderboard components (`.leaderboard-list`, `.leader-card`, `.leaderboard-entry`, `.leaderboard-status`, `.leaderboard-hero`, `.leaderboard-input`), level select components (`.level-list`, `.level-card`, `.level-status`), and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
 *   **Typography:** Font stacks include emoji-capable fallbacks for icon buttons.
@@ -106,7 +107,7 @@ Events:
 *   Match-3 uses `match3-level-<n>` gameIds and records `turns` with `undos` set to 0.
 
 ## 5. UI State (Current)
-*   Active surface: 2048 and Match-3. Bottom navigation is visible; coins UI is suppressed until the economy/city/shop flows are production-ready.
+*   Active surface: 2048, Match-3, and City. Bottom navigation is visible; emoji-labeled score chips and coins display are enabled in the 2048 header with coins placed left of the settings icon.
 *   Settings are accessed via the settings overlay; theme toggle lives inside that overlay.
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).

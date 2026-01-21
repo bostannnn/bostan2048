@@ -1,3 +1,5 @@
+import { Application, Container, Graphics, Sprite, Texture } from "pixi.js";
+
 export class CityScene {
     constructor(options) {
       this.root = options.root;
@@ -11,6 +13,11 @@ export class CityScene {
       this.inventory = { items: {} };
       this.selectedItemId = null;
       this.rotation = 0;
+      const envBase = import.meta.env?.BASE_URL || "/";
+      const normalizedEnvBase = envBase.endsWith("/") ? envBase : `${envBase}/`;
+      const runtimeBase = typeof document !== "undefined" ? new URL(".", document.baseURI).href : "";
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      this.assetBase = runtimeBase || `${origin}${normalizedEnvBase}`;
 
       this.layout = { gridSize: this.gridSize, tiles: [] };
       this.tileMap = new Map();
@@ -44,6 +51,10 @@ export class CityScene {
       this.initialPinchDist = null;
       this.initialScale = 1;
       this.hasPanned = false;
+      this.inputEnabled = true;
+      this.boundHandlers = null;
+      this.view = null;
+      this.destroyed = false;
 
       this.hoverCell = null;
       this.ghostSprite = null;
@@ -97,29 +108,39 @@ export class CityScene {
     }
 
     buildApp() {
-      if (!window.PIXI) {
+      if (!Application) {
         console.warn("PIXI is not available. CityScene cannot render.");
         return Promise.resolve();
       }
+      if (!this.root) {
+        console.warn("CityScene root not available.");
+        return Promise.resolve();
+      }
       this.root.innerHTML = "";
-      this.app = new window.PIXI.Application();
+      this.app = new Application();
 
       return this.app.init({
         backgroundAlpha: 0,
         antialias: true,
         resizeTo: this.root
       }).then(() => {
-        this.app.view.classList.add("city-canvas");
-        this.app.view.style.width = "100%";
-        this.app.view.style.height = "100%";
-        this.app.view.style.touchAction = "none";
-        this.root.appendChild(this.app.view);
+        const canvas = this.app.canvas || this.app.view;
+        if (!canvas) {
+          console.warn("CityScene canvas not available.");
+          return;
+        }
+        canvas.classList.add("city-canvas");
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.touchAction = "none";
+        this.root.appendChild(canvas);
+        this.view = canvas;
 
-        this.mapContainer = new window.PIXI.Container();
+        this.mapContainer = new Container();
         this.mapContainer.sortableChildren = true;
-        this.groundContainer = new window.PIXI.Container();
-        this.gridContainer = new window.PIXI.Container();
-        this.objectContainer = new window.PIXI.Container();
+        this.groundContainer = new Container();
+        this.gridContainer = new Container();
+        this.objectContainer = new Container();
         this.objectContainer.sortableChildren = true;
 
         this.mapContainer.addChild(this.groundContainer);
@@ -129,21 +150,39 @@ export class CityScene {
       });
     }
 
-    loadAssets() {
-      if (!window.PIXI || !window.PIXI.Assets) {
-        return Promise.resolve();
-      }
-      const urls = [
-        ...Object.values(this.assets.ground),
-        ...Object.values(this.assets.building)
-      ];
-      return window.PIXI.Assets.load(urls).then(() => {
-        Object.entries(this.assets.ground).forEach(([key, url]) => {
-          this.textures.ground[key] = window.PIXI.Texture.from(url);
-        });
-        Object.entries(this.assets.building).forEach(([key, url]) => {
-          this.textures.building[key] = window.PIXI.Texture.from(url);
-        });
+    loadTexture(path) {
+      if (!path) return Promise.resolve(null);
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.decoding = "async";
+        img.onload = () => resolve(Texture.from(img));
+        img.onerror = () => resolve(null);
+        img.src = path;
+      });
+    }
+
+    async loadAssets() {
+      if (!Texture) return;
+      const groundEntries = Object.entries(this.assets.ground);
+      const buildingEntries = Object.entries(this.assets.building);
+      const groundTextures = await Promise.all(
+        groundEntries.map(([, url]) => this.loadTexture(this.resolveAsset(url)))
+      );
+      const buildingTextures = await Promise.all(
+        buildingEntries.map(([, url]) => this.loadTexture(this.resolveAsset(url)))
+      );
+      groundEntries.forEach(([key], index) => {
+        const texture = groundTextures[index];
+        if (texture) {
+          this.textures.ground[key] = texture;
+        }
+      });
+      buildingEntries.forEach(([key], index) => {
+        const texture = buildingTextures[index];
+        if (texture) {
+          this.textures.building[key] = texture;
+        }
       });
     }
 
@@ -253,6 +292,34 @@ export class CityScene {
       this.setHint("City cleared. Items returned to inventory.");
     }
 
+    setInputEnabled(enabled) {
+      const next = Boolean(enabled);
+      if (this.inputEnabled === next) return;
+      this.inputEnabled = next;
+      if (!next) {
+        this.resetInputState();
+        this.clearGhost();
+      }
+    }
+
+    resetInputState() {
+      const view = this.view || this.app?.canvas || this.app?.view;
+      if (view) {
+        this.pointers.forEach((_, pointerId) => {
+          try {
+            view.releasePointerCapture?.(pointerId);
+          } catch (error) {
+            // Ignore.
+          }
+        });
+      }
+      this.pointers.clear();
+      this.drag = null;
+      this.dragMoved = false;
+      this.initialPinchDist = null;
+      this.root?.classList.remove("dragging");
+    }
+
     updateMetrics() {
       const style = getComputedStyle(this.root);
       const widthValue = parseFloat(style.getPropertyValue("--city-tile-width"));
@@ -296,7 +363,11 @@ export class CityScene {
     }
 
     getPointerPosition(event) {
-      const rect = this.app.view.getBoundingClientRect();
+      const view = this.view || this.app?.canvas || this.app?.view;
+      if (!view) {
+        return { x: event.clientX, y: event.clientY };
+      }
+      const rect = view.getBoundingClientRect();
       return {
         x: event.clientX - rect.left,
         y: event.clientY - rect.top
@@ -427,7 +498,7 @@ export class CityScene {
           const type = this.getGroundType(x, y);
           const texture = this.textures.ground[type] || this.textures.ground.grass;
           if (!texture) continue;
-          const sprite = new window.PIXI.Sprite(texture);
+          const sprite = new Sprite(texture);
           sprite.anchor.set(0.5);
           sprite.width = this.tileWidth;
           sprite.height = this.tileHeight;
@@ -453,7 +524,7 @@ export class CityScene {
     renderGridOverlay() {
       if (!this.gridContainer) return;
       this.gridContainer.removeChildren();
-      const grid = new window.PIXI.Graphics();
+      const grid = new Graphics();
       grid.lineStyle(1, 0xffffff, 0.18);
 
       for (let y = 0; y <= this.gridSize; y += 1) {
@@ -511,7 +582,7 @@ export class CityScene {
       const texture = this.getBuildingTexture(item, rotated);
       if (!texture) return null;
 
-      const sprite = new window.PIXI.Sprite(texture);
+      const sprite = new Sprite(texture);
       sprite.anchor.set(0.5, 1);
       const span = rotated.w + rotated.h;
       sprite.width = this.tileWidth * (span / 2) * 1.2;
@@ -529,7 +600,8 @@ export class CityScene {
 
     getBuildingTexture(item, footprint) {
       if (item && item.sprite) {
-        const match = Object.entries(this.assets.building).find(([, url]) => url === item.sprite);
+        const target = this.resolveAsset(item.sprite);
+        const match = Object.entries(this.assets.building).find(([, url]) => this.resolveAsset(url) === target);
         if (match) {
           return this.textures.building[match[0]];
         }
@@ -673,7 +745,7 @@ export class CityScene {
       const type = this.getGroundType(x, y);
       const texture = this.textures.ground[type] || this.textures.ground.grass;
       if (!texture) return null;
-      const sprite = new window.PIXI.Sprite(texture);
+      const sprite = new Sprite(texture);
       sprite.anchor.set(0.5);
       sprite.width = this.tileWidth;
       sprite.height = this.tileHeight;
@@ -689,12 +761,14 @@ export class CityScene {
     }
 
     bindInput() {
-      if (!this.app || !this.app.view) return;
-      const view = this.app.view;
+      const view = this.view || this.app?.canvas || this.app?.view;
+      if (!this.app || !view || this.boundHandlers) return;
+      this.view = view;
 
-      view.addEventListener("pointerdown", (event) => {
+      const handlePointerDown = (event) => {
+        if (!this.inputEnabled) return;
         if (event.button !== undefined && event.button !== 0) return;
-        view.setPointerCapture(event.pointerId);
+        view.setPointerCapture?.(event.pointerId);
         const point = this.getPointerPosition(event);
         this.pointers.set(event.pointerId, point);
 
@@ -714,9 +788,10 @@ export class CityScene {
           this.initialPinchDist = this.getPinchDistance();
           this.initialScale = this.scale;
         }
-      });
+      };
 
-      view.addEventListener("pointermove", (event) => {
+      const handlePointerMove = (event) => {
+        if (!this.inputEnabled) return;
         if (!this.pointers.has(event.pointerId)) return;
         this.pointers.set(event.pointerId, this.getPointerPosition(event));
 
@@ -742,7 +817,7 @@ export class CityScene {
         if (this.dragMoved) {
           this.hasPanned = true;
         }
-      });
+      };
 
       const endPointer = (event) => {
         if (this.pointers.has(event.pointerId)) {
@@ -750,6 +825,10 @@ export class CityScene {
         }
         if (this.pointers.size < 2) {
           this.initialPinchDist = null;
+        }
+        if (!this.inputEnabled) {
+          this.resetInputState();
+          return;
         }
         if (!this.dragMoved) {
           const local = this.getLocalMapPoint(event);
@@ -762,19 +841,18 @@ export class CityScene {
         this.dragMoved = false;
         this.root.classList.remove("dragging");
         try {
-          view.releasePointerCapture(event.pointerId);
+          view.releasePointerCapture?.(event.pointerId);
         } catch (error) {
           // Ignore.
         }
       };
 
-      view.addEventListener("pointerup", endPointer);
-      view.addEventListener("pointercancel", endPointer);
-      view.addEventListener("pointerleave", () => {
+      const handlePointerLeave = () => {
         this.clearGhost();
-      });
+      };
 
-      view.addEventListener("pointermove", (event) => {
+      const handleHoverMove = (event) => {
+        if (!this.inputEnabled) return;
         if (this.drag || this.pointers.size > 1) return;
         const local = this.getLocalMapPoint(event);
         const cell = this.screenToGrid(local.x, local.y);
@@ -783,19 +861,48 @@ export class CityScene {
         } else {
           this.clearGhost();
         }
-      });
+      };
 
-      view.addEventListener(
-        "wheel",
-        (event) => {
-          event.preventDefault();
-          const center = this.getPointerPosition(event);
-          const scaleChange = Math.pow(0.999, event.deltaY);
-          this.applyZoom(this.scale * scaleChange, center);
-          this.hasPanned = true;
-        },
-        { passive: false }
-      );
+      const handleWheel = (event) => {
+        if (!this.inputEnabled) return;
+        event.preventDefault();
+        const center = this.getPointerPosition(event);
+        const scaleChange = Math.pow(0.999, event.deltaY);
+        this.applyZoom(this.scale * scaleChange, center);
+        this.hasPanned = true;
+      };
+
+      this.boundHandlers = {
+        pointerdown: handlePointerDown,
+        pointermove: handlePointerMove,
+        pointerup: endPointer,
+        pointercancel: endPointer,
+        pointerleave: handlePointerLeave,
+        hovermove: handleHoverMove,
+        wheel: handleWheel
+      };
+
+      view.addEventListener("pointerdown", handlePointerDown);
+      view.addEventListener("pointermove", handlePointerMove);
+      view.addEventListener("pointerup", endPointer);
+      view.addEventListener("pointercancel", endPointer);
+      view.addEventListener("pointerleave", handlePointerLeave);
+      view.addEventListener("pointermove", handleHoverMove);
+      view.addEventListener("wheel", handleWheel, { passive: false });
+    }
+
+    unbindInput() {
+      const view = this.view || this.app?.canvas || this.app?.view;
+      if (!view || !this.boundHandlers) return;
+      const handlers = this.boundHandlers;
+      view.removeEventListener("pointerdown", handlers.pointerdown);
+      view.removeEventListener("pointermove", handlers.pointermove);
+      view.removeEventListener("pointerup", handlers.pointerup);
+      view.removeEventListener("pointercancel", handlers.pointercancel);
+      view.removeEventListener("pointerleave", handlers.pointerleave);
+      view.removeEventListener("pointermove", handlers.hovermove);
+      view.removeEventListener("wheel", handlers.wheel);
+      this.boundHandlers = null;
     }
 
     getLocalMapPoint(event) {
@@ -808,6 +915,19 @@ export class CityScene {
 
     isValidCell(x, y) {
       return x >= 0 && y >= 0 && x < this.gridSize && y < this.gridSize;
+    }
+
+    resolveAsset(path) {
+      if (!path) return path;
+      if (/^(?:[a-z]+:)?\/\//i.test(path) || path.startsWith("data:") || path.startsWith("blob:")) {
+        return path;
+      }
+      const trimmed = path.replace(/^\/+/, "");
+      try {
+        return new URL(trimmed, this.assetBase || "/").href;
+      } catch (error) {
+        return `${this.assetBase || "/"}${trimmed}`;
+      }
     }
 
     key(x, y) {
@@ -931,7 +1051,7 @@ export class CityScene {
         const preview = document.createElement("span");
         preview.className = "city-item-preview";
         if (item.sprite) {
-          preview.style.backgroundImage = `url("${item.sprite}")`;
+          preview.style.backgroundImage = `url("${this.resolveAsset(item.sprite)}")`;
         }
 
         const details = document.createElement("div");
@@ -1009,5 +1129,25 @@ export class CityScene {
       this.renderPlacements();
       this.saveLayout();
       this.setHint("Starter city regenerated.");
+    }
+
+    destroy() {
+      if (this.destroyed) return;
+      this.destroyed = true;
+      this.setInputEnabled(false);
+      this.unbindInput();
+      if (this.handleResize) {
+        window.removeEventListener("resize", this.handleResize);
+      }
+      if (this.app) {
+        this.app.destroy(true);
+        this.app = null;
+      }
+      this.view = null;
+      this.mapContainer = null;
+      this.groundContainer = null;
+      this.gridContainer = null;
+      this.objectContainer = null;
+      this.groundSprites.clear();
     }
   }

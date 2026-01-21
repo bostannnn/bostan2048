@@ -1,6 +1,6 @@
 import { Photo2048 } from './src/games/2048/index.js';
 import { Match3Game } from './src/games/match3/index.js';
-import { CityScene } from './city/src/CityScene.js';
+import { CityGame } from './src/games/city/index.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
 import * as PIXI from 'pixi.js';
 window.PIXI = PIXI;
@@ -13,7 +13,6 @@ import '/core.js';
 
   const views = {};
   const navButtons = [];
-  let citySceneInstance = null;
   const state = {
     shopCatalog: null,
     shopItemsById: {},
@@ -25,7 +24,8 @@ import '/core.js';
 
   const games = {
       '2048': new Photo2048(),
-      'match3': new Match3Game()
+      'match3': new Match3Game(),
+      'city': new CityGame()
   };
 
   let activeGameId = "2048";
@@ -107,9 +107,6 @@ import '/core.js';
       }
     }
 
-    if (viewId === "city" && citySceneInstance && citySceneInstance.onShow) {
-      citySceneInstance.onShow();
-    }
   }
 
   function setupNav() {
@@ -254,71 +251,14 @@ import '/core.js';
       });
   }
 
-  function setupCityScene() {
-    const root = document.getElementById("city-root");
-    const palette = document.getElementById("city-palette");
-    const hint = document.getElementById("city-hint");
-    
-    // Legacy support for global CityScene if not modularized yet
-    const CitySceneClass = CityScene; 
-    
-    if (!root || !palette || !CitySceneClass) return null;
-
-    const scene = new CitySceneClass({
-      root,
-      palette,
-      hint,
-      gridSize: 64,
-      storageKey: "arcadeCityLayout"
-    });
-
-    const modeButtons = document.querySelectorAll("[data-city-mode]");
-    modeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        modeButtons.forEach((btn) => btn.classList.remove("active"));
-        button.classList.add("active");
-        scene.setMode(button.dataset.cityMode);
-      });
-    });
-
-    const clearButton = document.getElementById("city-clear");
-    if (clearButton) {
-      clearButton.addEventListener("click", () => {
-        scene.clearLayout();
-      });
-    }
-
-    const regenerateButton = document.getElementById("city-regenerate");
-    if (regenerateButton) {
-      regenerateButton.addEventListener("click", () => {
-        if (scene.regenerateStarterCity) {
-          scene.regenerateStarterCity();
-        }
-      });
-    }
-
-    const rotateButtons = document.querySelectorAll("[data-city-rotate]");
-    rotateButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const direction = button.dataset.cityRotate;
-        scene.rotateSelection(direction === "left" ? -90 : 90);
-      });
-    });
-
-    citySceneInstance = scene;
-    return scene;
-  }
-
-  function bindEconomyEvents(cityScene) {
+  function bindEconomyEvents() {
     if (!window.AppBus || !window.EconomyManager) return;
     window.AppBus.on("economy:changed", () => {
       refreshShopCards();
     });
     window.AppBus.on("economy:inventory", () => {
       refreshShopCards();
-      if (cityScene) {
-        cityScene.setInventory(window.EconomyManager.getInventory());
-      }
+      games.city?.setInventory?.(window.EconomyManager.getInventory());
     });
   }
 
@@ -828,18 +768,15 @@ import '/core.js';
       });
     }
 
-    const cityScene = setupCityScene();
-    if (cityScene) {
-      cityScene.setInventory(window.EconomyManager ? window.EconomyManager.getInventory() : { items: {} });
+    if (window.EconomyManager) {
+      games.city?.setInventory?.(window.EconomyManager.getInventory());
     }
 
     loadShopCatalog().then(() => {
-      if (cityScene) {
-        cityScene.setCatalog(state.cityItems);
-      }
+      games.city?.setCatalog?.(state.cityItems);
     });
 
-    bindEconomyEvents(cityScene);
+    bindEconomyEvents();
     
     // Auto-launch 2048 if active view is 2048 (default)
     const startView = document.querySelector(".nav-button.active")?.dataset.view || "2048";

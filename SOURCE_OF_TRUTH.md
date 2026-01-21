@@ -1,6 +1,6 @@
 # Arcade City - Source of Truth
 
-Doc version: 1.2
+Doc version: 1.3
 
 This document is the canonical spec for the project. If any other document or UI
 behavior conflicts with this file, this file wins. Other docs should summarize
@@ -12,9 +12,9 @@ and link here.
 - 2048 includes 3 levels with per-level save state; the next level unlocks after reaching 2048, and a Level 4 "coming soon" card is shown.
 - The 2048 header uses a Levels button (replacing New Game) that opens the level select overlay, and game-over uses Try Again + Levels actions.
 - Level tile portraits load from `public/assets/levels/level-<n>/` and the level select overlay shows a preview image per level (currently `2048.jpg`).
-- City view is functional and uses PixiJS, but lives in a legacy folder.
+- City view is functional and uses PixiJS, implemented in `src/games/city/`.
 - Navigation includes direct access to 2048, Match-3, City, and Shop.
-- Bottom navigation is visible; the coins chip remains hidden to gate unfinished flows.
+- Bottom navigation is visible; the coins chip is visible in the 2048 header.
 - Settings live in the settings overlay (theme toggle, PWA refresh, dev tools).
 - Leaderboards work locally and sync to Firebase using the configured project.
 
@@ -24,8 +24,8 @@ and link here.
 - `src/core/GameInterface.js` defines the required lifecycle hooks.
 - 2048 lives at `src/games/2048/` with PixiJS v8 board rendering and HTML UI; the `LEVELS` list in `src/games/2048/index.js` defines level metadata and asset folders.
 - Match-3 lives at `src/games/match3/` with PixiJS v8 board rendering and HTML UI; the `LEVELS` list in `src/games/match3/index.js` defines level metadata.
-- City rendering is currently in `city/src/CityScene.js` (legacy), with plans to
-  move into `src/games/city/` when modularized.
+- City rendering lives in `src/games/city/CityScene.js` with a `CityGame`
+  cartridge entry in `src/games/city/index.js`.
 
 ## Runtime Contracts
 - Globals (`window.*`):
@@ -87,7 +87,7 @@ and link here.
 ## Economy (Local Only For Now)
 - `core.js` provides `EconomyManager` and `AppBus`.
 - 2048 and Match-3 award coins based on score; Picross stubs exist for later.
-- Coins UI is currently hidden; economy events still fire for future reuse.
+- Coins UI is visible in the 2048 header; economy events still fire for future reuse.
 
 ## PWA (Manifest + Service Worker)
 - The manifest is defined in `vite.config.js` (VitePWA `manifest` option).

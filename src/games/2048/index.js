@@ -352,19 +352,19 @@ export class Photo2048 extends GameInterface {
                 </div>
                 <div class="scores">
                     <div class="score-container glass-pill" data-label="Score">
-                        <span class="score-label">Score</span>
+                        <span class="score-label">⭐ Score</span>
                         <span class="score-value">0</span>
                     </div>
                     <div class="best-container glass-pill" data-label="Best">
-                        <span class="score-label">Best</span>
+                        <span class="score-label">🏆 Best</span>
                         <span class="score-value">0</span>
                     </div>
-                    <button id="settings-button" class="ui-button secondary small settings-inline" aria-label="Settings">Settings</button>
                     
                     <div class="currency-container glass-pill" id="currency-balance" data-label="Coins">
-                        <span class="score-label">Coins</span>
+                        <span class="score-label">🪙 Coins</span>
                         <span class="score-value">0</span>
                     </div>
+                    <button id="settings-button" class="ui-button secondary small icon-only settings-inline" aria-label="Settings" title="Settings">⚙️</button>
                 </div>
                 <div class="header-buttons">
                     <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>
