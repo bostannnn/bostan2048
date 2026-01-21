@@ -269,7 +269,7 @@ import '/core.js';
 
   function setupSettingsOverlay() {
     const overlay = document.getElementById("settings-overlay");
-    const openButtons = document.querySelectorAll("#settings-button");
+    const openButtons = document.querySelectorAll("[data-settings-trigger]");
     const closeButton = document.getElementById("close-settings");
     const pwaRefresh = document.getElementById("pwa-refresh");
     const devGameOver = document.getElementById("dev-game-over");
@@ -284,7 +284,7 @@ import '/core.js';
     }
     // Fallback delegation for dynamically created settings buttons
     document.addEventListener("click", (event) => {
-      const target = event.target.closest && event.target.closest("#settings-button");
+      const target = event.target.closest && event.target.closest("[data-settings-trigger]");
       if (target) {
         event.preventDefault();
         open();

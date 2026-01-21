@@ -1,6 +1,6 @@
 # Arcade City - Source of Truth
 
-Doc version: 1.4
+Doc version: 1.5
 
 This document is the canonical spec for the project. If any other document or UI
 behavior conflicts with this file, this file wins. Other docs should summarize
@@ -26,6 +26,7 @@ and link here.
 - Match-3 lives at `src/games/match3/` with PixiJS v8 board rendering and HTML UI; the `LEVELS` list in `src/games/match3/index.js` defines level metadata.
 - City rendering lives in `src/games/city/CityScene.js` with a `CityGame`
   cartridge entry in `src/games/city/index.js`.
+- City ground rendering uses viewport culling to reduce sprite counts.
 
 ## Runtime Contracts
 - Globals (`window.*`):

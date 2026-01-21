@@ -28,6 +28,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Move CityScene into `src/games/city/` cartridge.
 - [x] Resolve City asset URLs against the active base path.
 - [x] Switch City asset set to PNG sprites.
+- [x] Cull City ground tiles outside the viewport.
 - [ ] Building placement logic tied to inventory rules.
 
 ## Phase 4: Economy & Polish (Pending)

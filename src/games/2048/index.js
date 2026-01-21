@@ -364,7 +364,7 @@ export class Photo2048 extends GameInterface {
                         <span class="score-label">🪙 Coins</span>
                         <span class="score-value">0</span>
                     </div>
-                    <button id="settings-button" class="ui-button secondary small icon-only settings-inline" aria-label="Settings" title="Settings">⚙️</button>
+                    <button class="ui-button secondary small icon-only settings-inline" data-settings-trigger="true" aria-label="Settings" title="Settings">⚙️</button>
                 </div>
                 <div class="header-buttons">
                     <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>

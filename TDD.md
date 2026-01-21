@@ -68,7 +68,7 @@ Events:
 
 ## 3. Rendering
 *   **UI:** Native HTML/CSS overlays (fast, accessible).
-*   **City:** PixiJS v8 (Canvas) for isometric performance; implemented in `src/games/city/CityScene.js` with PNG assets under `public/assets/city/` resolved against the active base path.
+*   **City:** PixiJS v8 (Canvas) for isometric performance; implemented in `src/games/city/CityScene.js` with PNG assets under `public/assets/city/` resolved against the active base path and viewport culling for ground tiles.
 *   **Minigames:** 2048 board uses PixiJS v8 with HTML overlay UI. Match-3 uses PixiJS v8 with asset-based gem sprites and shared HTML overlays. Pixi renders with auto-density at device pixel ratio to keep tiles crisp. Tile portraits load per level from `public/assets/levels/level-<n>/`.
 *   **Liquid Glass:** `ui/theme.css` carries aurora gradients plus `--motion-*` and `--ui-space-*` tokens; `ui/components.css` provides glass cards/pills, overlay helpers (`.overlay-centered`, `.overlay-title`, `.overlay-subtitle`, `.overlay-actions`, `.overlay-form`), leaderboard components (`.leaderboard-list`, `.leader-card`, `.leaderboard-entry`, `.leaderboard-status`, `.leaderboard-hero`, `.leaderboard-input`), level select components (`.level-list`, `.level-card`, `.level-status`), and focus-visible handling. 2048 uses `src/games/2048/style.css` for responsive board sizing and glass overlay animations.
 *   **Typography:** Font stacks include emoji-capable fallbacks for icon buttons.

@@ -55,6 +55,8 @@ export class CityScene {
       this.boundHandlers = null;
       this.view = null;
       this.destroyed = false;
+      this.visibleRange = null;
+      this.cullRaf = null;
 
       this.hoverCell = null;
       this.ghostSprite = null;
@@ -348,6 +350,7 @@ export class CityScene {
       this.mapContainer.x = this.pan.x;
       this.mapContainer.y = this.pan.y;
       this.mapContainer.scale.set(this.scale);
+      this.scheduleGroundRender();
     }
 
     clampScale(nextScale) {
@@ -493,11 +496,16 @@ export class CityScene {
 
     renderGround() {
       if (!this.groundContainer) return;
+      const range = this.getVisibleCellRange();
+      if (this.visibleRange && this.isSameRange(this.visibleRange, range)) {
+        return;
+      }
+      this.visibleRange = range;
       this.groundContainer.removeChildren();
       this.groundSprites.clear();
 
-      for (let y = 0; y < this.gridSize; y += 1) {
-        for (let x = 0; x < this.gridSize; x += 1) {
+      for (let y = range.minY; y <= range.maxY; y += 1) {
+        for (let x = range.minX; x <= range.maxX; x += 1) {
           const type = this.getGroundType(x, y);
           const texture = this.textures.ground[type] || this.textures.ground.grass;
           if (!texture) continue;
@@ -516,6 +524,7 @@ export class CityScene {
     }
 
     updateGroundTile(x, y) {
+      if (!this.isInVisibleRange(x, y)) return;
       const sprite = this.groundSprites.get(this.key(x, y));
       const type = this.getGroundType(x, y);
       const texture = this.textures.ground[type] || this.textures.ground.grass;
@@ -914,6 +923,74 @@ export class CityScene {
         x: (point.x - this.pan.x) / this.scale,
         y: (point.y - this.pan.y) / this.scale
       };
+    }
+
+    getVisibleCellRange() {
+      if (!this.root) {
+        return {
+          minX: 0,
+          maxX: this.gridSize - 1,
+          minY: 0,
+          maxY: this.gridSize - 1
+        };
+      }
+      const rect = this.root.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) {
+        return {
+          minX: 0,
+          maxX: this.gridSize - 1,
+          minY: 0,
+          maxY: this.gridSize - 1
+        };
+      }
+      const corners = [
+        { x: 0, y: 0 },
+        { x: rect.width, y: 0 },
+        { x: 0, y: rect.height },
+        { x: rect.width, y: rect.height }
+      ];
+      const cells = corners.map((corner) => {
+        const localX = (corner.x - this.pan.x) / this.scale;
+        const localY = (corner.y - this.pan.y) / this.scale;
+        return this.screenToGrid(localX, localY);
+      });
+      const xs = cells.map((cell) => cell.x);
+      const ys = cells.map((cell) => cell.y);
+      const padding = 3;
+      const minX = Math.max(0, Math.min(...xs) - padding);
+      const maxX = Math.min(this.gridSize - 1, Math.max(...xs) + padding);
+      const minY = Math.max(0, Math.min(...ys) - padding);
+      const maxY = Math.min(this.gridSize - 1, Math.max(...ys) + padding);
+      return { minX, maxX, minY, maxY };
+    }
+
+    isSameRange(a, b) {
+      return (
+        a &&
+        b &&
+        a.minX === b.minX &&
+        a.maxX === b.maxX &&
+        a.minY === b.minY &&
+        a.maxY === b.maxY
+      );
+    }
+
+    isInVisibleRange(x, y) {
+      if (!this.visibleRange) return true;
+      return (
+        x >= this.visibleRange.minX &&
+        x <= this.visibleRange.maxX &&
+        y >= this.visibleRange.minY &&
+        y <= this.visibleRange.maxY
+      );
+    }
+
+    scheduleGroundRender() {
+      if (this.cullRaf) return;
+      this.cullRaf = window.requestAnimationFrame(() => {
+        this.cullRaf = null;
+        this.renderGround();
+      });
     }
 
     isValidCell(x, y) {
