@@ -103,6 +103,7 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   Match-3 supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic, auto-shuffles on dead boards, richer clear/cascade visuals with drop-in spawns, reduced-motion compliance, and ignores stale saved runs.
 *   Match-3 scoring includes combo multipliers + streak bonuses, and the game-over sheet shows an end-of-level summary.
 *   City asset URLs resolve against the active base path to support subpath deployments (e.g., GitHub Pages).
+*   City uses PNG sprite assets under `public/assets/city/` for ground tiles and buildings.
 
 ## Firebase Integration (Leaderboards)
 Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.

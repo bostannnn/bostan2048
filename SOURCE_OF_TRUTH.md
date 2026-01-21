@@ -1,6 +1,6 @@
 # Arcade City - Source of Truth
 
-Doc version: 1.3
+Doc version: 1.4
 
 This document is the canonical spec for the project. If any other document or UI
 behavior conflicts with this file, this file wins. Other docs should summarize
@@ -69,6 +69,7 @@ and link here.
 - Audio: Howler.js is the planned audio system (not yet integrated).
 - Tooling: Firebase Admin SDK is used for one-off leaderboard migration scripts.
 - Art: Kenney Puzzle Pack assets provide match-3 gem sprites and placeholders.
+- City art uses PNG sprites stored under `public/assets/city/`.
 
 ## Input & Interaction
 - 2048 uses pointer events on `.game-stage` with `touch-action: none` so swipes

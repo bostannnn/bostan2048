@@ -134,6 +134,6 @@ export class CityGame extends GameInterface {
       this.scene.destroy();
       this.scene = null;
     }
-    this.container = null;
+    super.destroy();
   }
 }

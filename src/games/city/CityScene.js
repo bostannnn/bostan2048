@@ -61,20 +61,20 @@ export class CityScene {
 
       this.assets = {
         ground: {
-          grass: "assets/city/svg/grass.svg",
-          road: "assets/city/svg/road.svg",
-          road_center: "assets/city/svg/road_center.svg",
-          road_corner: "assets/city/svg/road_corner.svg",
-          water: "assets/city/svg/water.svg",
-          plaza: "assets/city/svg/plaza.svg"
+          grass: "assets/city/grass.png",
+          road: "assets/city/road.png",
+          road_center: "assets/city/road_center.png",
+          road_corner: "assets/city/road_corner.png",
+          water: "assets/city/water.png",
+          plaza: "assets/city/plaza.png"
         },
         building: {
-          house: "assets/city/svg/house.svg",
-          shop: "assets/city/svg/shop.svg",
-          fountain: "assets/city/svg/fountain.svg",
-          building_small: "assets/city/svg/building_small.svg",
-          building_medium: "assets/city/svg/building_medium.svg",
-          building_large: "assets/city/svg/building_large.svg"
+          house: "assets/city/house.png",
+          shop: "assets/city/shop_small.png",
+          fountain: "assets/city/fountain.png",
+          building_small: "assets/city/building_small.png",
+          building_medium: "assets/city/building_medium.png",
+          building_large: "assets/city/building_large.png"
         }
       };
 
@@ -157,7 +157,10 @@ export class CityScene {
         img.crossOrigin = "anonymous";
         img.decoding = "async";
         img.onload = () => resolve(Texture.from(img));
-        img.onerror = () => resolve(null);
+        img.onerror = () => {
+          console.warn("City asset failed to load:", path);
+          resolve(null);
+        };
         img.src = path;
       });
     }

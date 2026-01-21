@@ -27,6 +27,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] City engine (PixiJS v8 isometric grid).
 - [x] Move CityScene into `src/games/city/` cartridge.
 - [x] Resolve City asset URLs against the active base path.
+- [x] Switch City asset set to PNG sprites.
 - [ ] Building placement logic tied to inventory rules.
 
 ## Phase 4: Economy & Polish (Pending)

@@ -18,11 +18,11 @@
       "label": "City",
       "priceTiers": [500, 900, 1500, 2400],
       "items": [
-        { "id": "city_house_small", "name": "Small House", "price": 500, "type": "building", "footprint": { "w": 2, "h": 2 }, "sprite": "assets/city/svg/house.svg" },
-        { "id": "city_bakery", "name": "Corner Bakery", "price": 900, "type": "building", "footprint": { "w": 3, "h": 2 }, "sprite": "assets/city/svg/shop.svg" },
-        { "id": "city_park_fountain", "name": "Fountain Plaza", "price": 1500, "type": "decor", "footprint": { "w": 3, "h": 3 }, "sprite": "assets/city/svg/fountain.svg" },
-        { "id": "city_townhall", "name": "Town Hall", "price": 2400, "type": "building", "footprint": { "w": 4, "h": 3 }, "sprite": "assets/city/svg/building_large.svg" },
-        { "id": "city_road_tile", "name": "Road Tile", "price": 500, "type": "ground", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/svg/road.svg", "groundType": "road" }
+        { "id": "city_house_small", "name": "Small House", "price": 500, "type": "building", "footprint": { "w": 2, "h": 2 }, "sprite": "assets/city/house.png" },
+        { "id": "city_bakery", "name": "Corner Bakery", "price": 900, "type": "building", "footprint": { "w": 3, "h": 2 }, "sprite": "assets/city/shop_small.png" },
+        { "id": "city_park_fountain", "name": "Fountain Plaza", "price": 1500, "type": "decor", "footprint": { "w": 3, "h": 3 }, "sprite": "assets/city/fountain.png" },
+        { "id": "city_townhall", "name": "Town Hall", "price": 2400, "type": "building", "footprint": { "w": 4, "h": 3 }, "sprite": "assets/city/building_large.png" },
+        { "id": "city_road_tile", "name": "Road Tile", "price": 500, "type": "ground", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/road.png", "groundType": "road" }
       ]
     }
   ]
