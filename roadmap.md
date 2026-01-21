@@ -29,6 +29,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Resolve City asset URLs against the active base path.
 - [x] Switch City asset set to PNG sprites.
 - [x] Cull City ground tiles outside the viewport.
+- [x] Add grass tile variants for city ground variety.
 - [ ] Building placement logic tied to inventory rules.
 
 ## Phase 4: Economy & Polish (Pending)

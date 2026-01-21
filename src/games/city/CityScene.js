@@ -57,6 +57,8 @@ export class CityScene {
       this.destroyed = false;
       this.visibleRange = null;
       this.cullRaf = null;
+      this.seedValue = null;
+      this.grassVariants = ["grass", "grass_01", "grass_02", "grass_03"];
 
       this.hoverCell = null;
       this.ghostSprite = null;
@@ -64,6 +66,9 @@ export class CityScene {
       this.assets = {
         ground: {
           grass: "assets/city/grass.png",
+          grass_01: "assets/city/grass_01.png",
+          grass_02: "assets/city/grass_02.png",
+          grass_03: "assets/city/grass_03.png",
           road: "assets/city/road.png",
           road_center: "assets/city/road_center.png",
           road_corner: "assets/city/road_corner.png",
@@ -491,7 +496,26 @@ export class CityScene {
       if (this.isRoadType(base)) {
         return this.getRoadVariant(x, y);
       }
+      if (base === "grass") {
+        return this.getGrassVariantKey(x, y);
+      }
       return base;
+    }
+
+    getGrassVariantKey(x, y) {
+      const variants = Array.isArray(this.grassVariants) && this.grassVariants.length
+        ? this.grassVariants
+        : ["grass"];
+      const seed = this.getSeedValue();
+      const index = this.hashCoords(x, y, seed) % variants.length;
+      return variants[index] || "grass";
+    }
+
+    hashCoords(x, y, seed) {
+      let hash = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1442695041);
+      hash = (hash ^ (hash >>> 13)) >>> 0;
+      hash = Math.imul(hash, 1274126177) >>> 0;
+      return (hash ^ (hash >>> 16)) >>> 0;
     }
 
     renderGround() {
@@ -537,7 +561,7 @@ export class CityScene {
       if (!this.gridContainer) return;
       this.gridContainer.removeChildren();
       const grid = new Graphics();
-      grid.lineStyle(1, 0xffffff, 0.18);
+      grid.lineStyle(0.8, 0xffffff, 0.12);
 
       for (let y = 0; y <= this.gridSize; y += 1) {
         const start = this.gridToScreen(0, y);
@@ -1053,6 +1077,19 @@ export class CityScene {
     }
 
     getSeededRng() {
+      let t = this.getSeedValue() >>> 0;
+      return () => {
+        t += 0x6d2b79f5;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    getSeedValue() {
+      if (Number.isFinite(this.seedValue)) {
+        return this.seedValue;
+      }
       const key = this.getSeedKey();
       let seed = 0;
       try {
@@ -1065,13 +1102,8 @@ export class CityScene {
       } catch (error) {
         seed = 13371337;
       }
-      let t = seed >>> 0;
-      return () => {
-        t += 0x6d2b79f5;
-        let r = Math.imul(t ^ (t >>> 15), 1 | t);
-        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-      };
+      this.seedValue = seed;
+      return seed;
     }
 
     collectRoadAdjacents() {
@@ -1195,6 +1227,7 @@ export class CityScene {
       } catch (error) {
         // Ignore seed storage errors.
       }
+      this.seedValue = seed;
       return seed;
     }
 

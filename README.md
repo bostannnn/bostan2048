@@ -105,6 +105,7 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   City asset URLs resolve against the active base path to support subpath deployments (e.g., GitHub Pages).
 *   City uses PNG sprite assets under `public/assets/city/` for ground tiles and buildings.
 *   City ground rendering uses viewport culling to limit visible tiles for better performance.
+*   City ground grass tiles support deterministic variants (`grass_01`-`grass_03`) for visual variety.
 
 ## Firebase Integration (Leaderboards)
 Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.
