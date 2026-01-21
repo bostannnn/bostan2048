@@ -23,6 +23,12 @@ export class Match3Renderer {
     this.hintOverlay = null;
     this.rejectOverlay = null;
     this.flashOverlay = null;
+    this.resizeHandler = null;
+    this.motionQuery = typeof window !== "undefined" && window.matchMedia
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+    this.reduceMotion = this.motionQuery ? this.motionQuery.matches : false;
+    this.motionHandler = null;
     this.ready = this.init();
   }
 
@@ -69,7 +75,19 @@ export class Match3Renderer {
       this.resizeObserver = new ResizeObserver(() => this.resize());
       this.resizeObserver.observe(this.hostEl);
     } else {
-      window.addEventListener("resize", () => this.resize());
+      this.resizeHandler = () => this.resize();
+      window.addEventListener("resize", this.resizeHandler);
+    }
+
+    if (this.motionQuery) {
+      this.motionHandler = (event) => {
+        this.reduceMotion = !!event.matches;
+      };
+      if (this.motionQuery.addEventListener) {
+        this.motionQuery.addEventListener("change", this.motionHandler);
+      } else if (this.motionQuery.addListener) {
+        this.motionQuery.addListener(this.motionHandler);
+      }
     }
 
     await this.preloadTextures();
@@ -153,6 +171,10 @@ export class Match3Renderer {
       width: Math.max(2, Math.round(tileSize * 0.08)),
       alpha: 0.9,
     });
+    if (this.reduceMotion) {
+      this.hintOverlay.alpha = 0.75;
+      return;
+    }
     this.hintOverlay.alpha = 0.2;
     this.hintTween = gsap.to(this.hintOverlay, {
       alpha: 0.9,
@@ -237,6 +259,15 @@ export class Match3Renderer {
     return { x: pos.x + tileSize / 2, y: pos.y + tileSize / 2 };
   }
 
+  getSpawnPosition(row, col) {
+    const dest = this.getContainerPosition(row, col);
+    const { offsetY, spacing, tileSize } = this.metrics;
+    return {
+      x: dest.x,
+      y: offsetY - spacing - tileSize * 0.6,
+    };
+  }
+
   render(grid) {
     if (!this.app) return;
     this.lastGrid = grid;
@@ -265,13 +296,20 @@ export class Match3Renderer {
     this.tileLayer.addChild(container);
     this.tiles.set(tile, container);
     const dest = this.getContainerPosition(row, col);
-    container.position.set(dest.x, dest.y);
-    container.__targetX = dest.x;
-    container.__targetY = dest.y;
+    const spawn = this.getSpawnPosition(row, col);
+    if (this.reduceMotion) {
+      container.position.set(dest.x, dest.y);
+      container.scale.set(1);
+      container.__targetX = dest.x;
+      container.__targetY = dest.y;
+    } else {
+      container.position.set(spawn.x, spawn.y);
+      container.scale.set(0.92);
+      this.animatePosition(container, dest);
+      this.animateScale(container, 1);
+    }
     container.__lastRow = row;
     container.__lastCol = col;
-    container.scale.set(0);
-    this.animateScale(container, 1);
   }
 
   updateTile(tile, row, col) {
@@ -315,13 +353,17 @@ export class Match3Renderer {
       glow.position.set(tileSize / 2, tileSize / 2);
       glow.scale.set(0.92);
       container.addChild(glow);
-      container.__glowTween = gsap.to(glow, {
-        alpha: 0.85,
-        duration: 0.8,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-      });
+      if (!this.reduceMotion) {
+        container.__glowTween = gsap.to(glow, {
+          alpha: 0.85,
+          duration: 0.8,
+          yoyo: true,
+          repeat: -1,
+          ease: "sine.inOut",
+        });
+      } else {
+        glow.alpha = 0.7;
+      }
     }
 
     const texture = this.gemTextures[tile.type];
@@ -383,6 +425,12 @@ export class Match3Renderer {
   }
 
   animatePosition(container, dest) {
+    if (this.reduceMotion) {
+      container.position.set(dest.x, dest.y);
+      container.__targetX = dest.x;
+      container.__targetY = dest.y;
+      return;
+    }
     const distance = Math.hypot(dest.x - container.position.x, dest.y - container.position.y);
     const distanceFactor = Math.min(1.2, distance / Math.max(1, this.metrics.tileSize));
     const duration = Math.min(0.28, 0.12 + distanceFactor * 0.08);
@@ -405,6 +453,10 @@ export class Match3Renderer {
   }
 
   animateScale(container, scale) {
+    if (this.reduceMotion) {
+      container.scale.set(scale);
+      return;
+    }
     gsap.killTweensOf(container.scale);
     gsap.to(container.scale, {
       x: scale,
@@ -415,6 +467,10 @@ export class Match3Renderer {
   }
 
   animateRemoval(container, tile) {
+    if (this.reduceMotion) {
+      container.destroy({ children: true });
+      return;
+    }
     gsap.killTweensOf(container);
     gsap.killTweensOf(container.scale);
     if (container.__glowTween) {
@@ -462,6 +518,18 @@ export class Match3Renderer {
     const prevB = containerB.zIndex;
     containerA.zIndex = 5;
     containerB.zIndex = 5;
+
+    if (this.reduceMotion) {
+      containerA.position.set(posB.x, posB.y);
+      containerB.position.set(posA.x, posA.y);
+      containerA.zIndex = prevA;
+      containerB.zIndex = prevB;
+      containerA.__targetX = posB.x;
+      containerA.__targetY = posB.y;
+      containerB.__targetX = posA.x;
+      containerB.__targetY = posA.y;
+      return Promise.resolve();
+    }
 
     gsap.killTweensOf(containerA.position);
     gsap.killTweensOf(containerB.position);
@@ -512,6 +580,10 @@ export class Match3Renderer {
       .filter(Boolean);
     if (!targets.length) return Promise.resolve();
 
+    if (this.reduceMotion) {
+      return Promise.resolve();
+    }
+
     gsap.killTweensOf(targets);
     gsap.killTweensOf(targets.map((target) => target.scale));
 
@@ -543,6 +615,7 @@ export class Match3Renderer {
 
   flashReject(positions) {
     if (!this.rejectOverlay || !positions.length) return;
+    if (this.reduceMotion) return;
     const { tileSize, radius } = this.metrics;
     this.rejectOverlay.clear();
     positions.forEach((pos) => {
@@ -569,6 +642,7 @@ export class Match3Renderer {
 
   flashBoard(color = 0xffffff, alpha = 0.18) {
     if (!this.flashOverlay) return;
+    if (this.reduceMotion) return;
     const { offsetX, offsetY, boardWidth, boardHeight, radius } = this.metrics;
     this.flashOverlay.clear();
     this.flashOverlay.roundRect(offsetX, offsetY, boardWidth, boardHeight, radius * 0.8);
@@ -590,6 +664,7 @@ export class Match3Renderer {
   spawnBurst(x, y, textureKey, options = {}) {
     const texture = this.specialTextures[textureKey];
     if (!texture || !this.effectLayer) return;
+    if (this.reduceMotion) return;
     const count = options.count || 1;
     const spread = options.spread ?? 0.3;
     const baseScale = options.scale ?? 0.6;
@@ -623,6 +698,18 @@ export class Match3Renderer {
     if (this.resizeObserver && this.hostEl) {
       this.resizeObserver.unobserve(this.hostEl);
       this.resizeObserver = null;
+    }
+    if (this.resizeHandler) {
+      window.removeEventListener("resize", this.resizeHandler);
+      this.resizeHandler = null;
+    }
+    if (this.motionQuery && this.motionHandler) {
+      if (this.motionQuery.removeEventListener) {
+        this.motionQuery.removeEventListener("change", this.motionHandler);
+      } else if (this.motionQuery.removeListener) {
+        this.motionQuery.removeListener(this.motionHandler);
+      }
+      this.motionHandler = null;
     }
     if (this.hintTween) {
       this.hintTween.kill();

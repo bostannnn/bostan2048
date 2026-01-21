@@ -111,7 +111,7 @@ Events:
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).
 *   Performance: 2048 background effects pause when the view is inactive.
-*   Match-3 input supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic feedback, auto-shuffles on dead boards, richer clear/cascade visuals, and stale save validation.
+*   Match-3 input supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic feedback, auto-shuffles on dead boards, richer clear/cascade visuals with drop-in spawns, reduced-motion compliance, and stale save validation.
 *   Match-3 scoring adds combo multipliers + streak bonuses, and the end-of-level sheet includes a summary of run stats.
 *   2048 swipe input includes a pointer-up fallback to reduce missed swipes.
 *   Levels: 2048 ships with three levels; Match-3 ships with ten levels. The next level unlocks after hitting the prior target.

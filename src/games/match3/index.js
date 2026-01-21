@@ -292,13 +292,14 @@ export class Match3Game extends GameInterface {
       const result = this.engine.resolveSwap(from, to);
       if (result.matched) {
         const cascades = Math.max(1, result.cascades || 1);
-        const comboMultiplier = 1 + Math.max(0, cascades - 1) * 0.35;
+        const comboMultiplier = 1 + Math.min(0.6, Math.max(0, cascades - 1) * 0.12);
+        const cascadeDamp = 1 / (1 + Math.max(0, cascades - 1) * 0.2);
         this.currentStreak += 1;
         this.maxStreak = Math.max(this.maxStreak, this.currentStreak);
         this.maxComboMultiplier = Math.max(this.maxComboMultiplier, comboMultiplier);
         const baseScore = result.cleared * SCORE_PER_TILE + (result.bonus || 0);
         const streakBonus = Math.max(0, this.currentStreak - 1) * 120;
-        const gained = Math.round(baseScore * comboMultiplier + streakBonus);
+        const gained = Math.round(baseScore * comboMultiplier * cascadeDamp + streakBonus);
         this.score += gained;
         if (this.score > this.bestScore) {
           this.bestScore = this.score;
@@ -316,10 +317,10 @@ export class Match3Game extends GameInterface {
           const intensity = Math.min(0.35, 0.18 + (cascades - 1) * 0.06);
           this.renderer.flashBoard(0xffd36a, intensity);
         }
-        if (this.movesRemaining > 0) {
+        const finished = this.checkGameOver();
+        if (!finished && this.movesRemaining > 0) {
           this.ensurePlayableBoard();
         }
-        this.checkGameOver();
       } else {
         this.currentStreak = 0;
         await this.renderer.animateSwap(tileA, tileB, to, from);
@@ -422,12 +423,15 @@ export class Match3Game extends GameInterface {
 
   checkGameOver() {
     const level = this.getLevelConfig(this.currentLevel);
-    if (!level) return;
+    if (!level) return false;
     if (this.score >= level.target) {
       this.finishLevel(true);
+      return true;
     } else if (this.movesRemaining <= 0) {
       this.finishLevel(false);
+      return true;
     }
+    return false;
   }
 
   finishLevel(isWin) {
@@ -613,7 +617,10 @@ export class Match3Game extends GameInterface {
       }
       const hint = this.engine.findValidSwap();
       if (!hint) {
-        this.ensurePlayableBoard();
+        const shuffled = this.ensurePlayableBoard();
+        if (shuffled) {
+          this.scheduleIdleHint();
+        }
         return;
       }
       this.renderer.showHint([hint.from, hint.to]);

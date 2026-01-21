@@ -172,6 +172,41 @@ export class Match3Engine {
         return true;
       }
     }
+    return this.forceValidSwap();
+  }
+
+  forceValidSwap({ maxAttempts = 40 } = {}) {
+    if (this.rows < 2 || this.cols < 3) return false;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      this.grid = this.createGrid();
+      const row = Math.floor(this.rng() * (this.rows - 1));
+      const col = Math.floor(this.rng() * (this.cols - 2));
+      const typeA = this.randomType();
+      let typeB = this.randomType();
+      let guard = 0;
+      while (typeB === typeA && guard < 10) {
+        typeB = this.randomType();
+        guard += 1;
+      }
+      const left = this.grid[row][col];
+      const mid = this.grid[row][col + 1];
+      const right = this.grid[row][col + 2];
+      const below = this.grid[row + 1][col + 1];
+      if (!left || !mid || !right || !below) continue;
+
+      left.type = typeA;
+      left.special = null;
+      mid.type = typeB;
+      mid.special = null;
+      right.type = typeA;
+      right.special = null;
+      below.type = typeA;
+      below.special = null;
+
+      if (this.findMatches().matches.length === 0) {
+        return true;
+      }
+    }
     return false;
   }
 
