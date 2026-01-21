@@ -132,6 +132,49 @@ export class Match3Engine {
     return { matches, intersections };
   }
 
+  hasValidMove() {
+    return !!this.findValidSwap();
+  }
+
+  findValidSwap() {
+    for (let row = 0; row < this.rows; row += 1) {
+      for (let col = 0; col < this.cols; col += 1) {
+        const current = this.grid[row][col];
+        if (!current) continue;
+        const neighbors = [
+          { row, col: col + 1 },
+          { row: row + 1, col },
+        ];
+        for (const neighbor of neighbors) {
+          if (neighbor.row >= this.rows || neighbor.col >= this.cols) continue;
+          const other = this.grid[neighbor.row][neighbor.col];
+          if (!other) continue;
+          if (current.special === "color" || other.special === "color") {
+            return { from: { row, col }, to: neighbor };
+          }
+          this.swapTiles({ row, col }, neighbor);
+          const { matches } = this.findMatches();
+          this.swapTiles({ row, col }, neighbor);
+          if (matches.length) {
+            return { from: { row, col }, to: neighbor };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  shuffle({ maxAttempts = 25 } = {}) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const nextGrid = this.createGrid();
+      this.grid = nextGrid;
+      if (this.findValidSwap()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   resolveSwap(a, b) {
     if (!this.isAdjacent(a, b)) return { matched: false };
     this.swapTiles(a, b);

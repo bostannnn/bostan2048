@@ -100,7 +100,8 @@ The project follows a "Console & Cartridge" plugin system using ES Modules (`imp
 *   2048 swipe input includes a pointer-up fallback for more reliable swipes.
 *   Match-3 ships with 10 levels (targets + move limits) and uses the shared level selector overlay.
 *   Match-3 uses Kenney Puzzle Pack gem sprites and placeholder previews/backgrounds.
-*   Match-3 supports drag-to-swap and gives a quick reject animation + haptic pulse on invalid swaps.
+*   Match-3 supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic, auto-shuffles on dead boards, richer clear/cascade visuals, and ignores stale saved runs.
+*   Match-3 scoring includes combo multipliers + streak bonuses, and the game-over sheet shows an end-of-level summary.
 
 ## Firebase Integration (Leaderboards)
 Firebase is configured in `index.html` via `window.firebaseConfig` and loads from the CDN.

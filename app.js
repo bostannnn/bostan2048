@@ -396,6 +396,7 @@ import '/core.js';
     const entry = document.getElementById("leaderboard-entry");
     const pendingLabel = document.getElementById("leaderboard-pending");
     const hint = document.getElementById("leaderboard-hint");
+    const summaryEl = document.getElementById("leaderboard-summary");
     const status = document.getElementById("leaderboard-status");
     const tryAgainBtn = document.getElementById("leaderboard-try-again");
     const levelsBtn = document.getElementById("leaderboard-levels");
@@ -489,6 +490,16 @@ import '/core.js';
         hint.textContent = "";
         hint.classList.add("hidden");
       }
+      if (summaryEl) {
+        if (options.summary) {
+          const summary = options.summary;
+          summaryEl.textContent = `Moves: ${Number(summary.movesUsed || 0).toLocaleString()} | Max Combo: x${Number(summary.maxComboMultiplier || 1).toFixed(2)} | Best Streak: ${Number(summary.maxStreak || 0).toLocaleString()} | Shuffles: ${Number(summary.shuffles || 0).toLocaleString()}`;
+          summaryEl.classList.remove("hidden");
+        } else {
+          summaryEl.textContent = "";
+          summaryEl.classList.add("hidden");
+        }
+      }
       if (options.score !== undefined) {
         pendingScore = {
           gameId: leaderboardGameId,
@@ -566,6 +577,10 @@ import '/core.js';
       currentMode = "default";
       leaderboardLevel = null;
       leaderboardGameId = null;
+      if (summaryEl) {
+        summaryEl.textContent = "";
+        summaryEl.classList.add("hidden");
+      }
     }
 
     closeLeaderboardRef = closeLeaderboard;
@@ -740,10 +755,11 @@ import '/core.js';
         const undos = Number(event?.detail?.stats?.undos) || 0;
         const mode = event?.detail?.mode || "gameover";
         const level = event?.detail?.level || getActiveLevel(gameId);
+        const summary = event?.detail?.summary || null;
         pendingScore = { gameId, level, score, turns, undos, date: Date.now() };
         const qualifies = true;
         if (openLeaderboardRef) {
-          openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode, level, gameId });
+          openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode, level, gameId, summary });
         }
       });
     });

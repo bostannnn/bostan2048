@@ -8,7 +8,7 @@ and link here.
 
 ## Current Product Scope (Playable Today)
 - PWA shell with the 2048 cartridge fully playable.
-- Match-3 cartridge is playable with 10 levels, target scores, and move limits.
+- Match-3 cartridge is playable with 10 levels, target scores, move limits, idle hints, invalid swap feedback, auto-shuffles on dead boards, combo/streak scoring, and an end-of-level summary.
 - 2048 includes 3 levels with per-level save state; the next level unlocks after reaching 2048, and a Level 4 "coming soon" card is shown.
 - The 2048 header uses a Levels button (replacing New Game) that opens the level select overlay, and game-over uses Try Again + Levels actions.
 - Level tile portraits load from `public/assets/levels/level-<n>/` and the level select overlay shows a preview image per level (currently `2048.jpg`).
@@ -45,7 +45,7 @@ and link here.
   - `match3HighScores:level-<n>`
   - `match3:level-<n>:bestScore`, `match3:level-<n>:gameState`
 - Events:
-  - `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode? }`)
+  - `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode?, summary?: { movesUsed, movesRemaining, maxComboMultiplier, maxStreak, shuffles } }`)
   - `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
 
 ## UI / Design System
@@ -74,7 +74,7 @@ and link here.
 - 2048 uses pointer events on `.game-stage` with `touch-action: none` so swipes
   register across the full play area.
 - Header buttons remain tappable while swipes target the game stage.
-- Match-3 uses pointer input on the match-3 board to swap adjacent tiles.
+- Match-3 uses pointer input on the board with drag-to-swap, idle hint pulses, and clear invalid-swap feedback; dead boards auto-shuffle.
 
 ## Leaderboards
 - Local scores saved per level under `photo2048HighScores:level-<n>` with player name cached as

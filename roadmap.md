@@ -44,6 +44,7 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - [x] Confirm before starting a new 2048 game.
 - [x] GitHub Pages workflows (manual prod deploy + dev subpath).
 - [x] Match-3 input polish (drag-to-swap + invalid move feedback).
+- [x] Match-3 polish: idle hints (~7s), invalid swap flash, auto-shuffle on dead boards, combo/streak scoring, end-of-level summary, richer clear/cascade visuals, stale-save validation.
 
 ## Progress Report (2026-01-19)
 - Level system finalized: per-level assets, preview card layout, and per-level leaderboards.

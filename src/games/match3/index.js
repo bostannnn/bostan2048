@@ -23,6 +23,8 @@ const MATCH3_ASSETS = {
     bomb: "assets/match3/kenney_puzzle-pack/png/particleStar.png",
     color: "assets/match3/kenney_puzzle-pack/png/particleCartoonStar.png",
     line: "assets/match3/kenney_puzzle-pack/png/selectorA.png",
+    sparkle: "assets/match3/kenney_puzzle-pack/png/particleSmallStar.png",
+    burst: "assets/match3/kenney_puzzle-pack/png/particleStar.png",
   },
 };
 
@@ -64,6 +66,12 @@ export class Match3Game extends GameInterface {
     this.dragStart = null;
     this.dragSwapTriggered = false;
     this.lastHoverCell = null;
+    this.currentStreak = 0;
+    this.maxStreak = 0;
+    this.maxComboMultiplier = 1;
+    this.totalShuffles = 0;
+    this.hintTimer = null;
+    this.idleHintDelay = 7000;
   }
 
   async mount(container) {
@@ -131,6 +139,7 @@ export class Match3Game extends GameInterface {
     if (this.inputLocked) return;
     const cell = this.getCellFromEvent(event);
     if (!cell) return;
+    this.resetIdleHint();
     this.pointerDown = true;
     this.pointerId = event.pointerId ?? null;
     this.dragStart = { x: event.clientX, y: event.clientY };
@@ -144,21 +153,20 @@ export class Match3Game extends GameInterface {
 
   handlePointerMove = (event) => {
     if (!this.pointerDown || this.inputLocked || !this.selectedCell || !this.renderer) return;
+    this.resetIdleHint();
     const cell = this.getCellFromEvent(event);
-    if (!cell) return;
-    this.lastHoverCell = cell;
+    if (cell) {
+      this.lastHoverCell = cell;
+    }
     if (this.dragSwapTriggered) return;
 
     const dx = event.clientX - (this.dragStart?.x ?? event.clientX);
     const dy = event.clientY - (this.dragStart?.y ?? event.clientY);
-    const distance = Math.hypot(dx, dy);
-    const threshold = Math.max(10, this.renderer.metrics.tileSize * 0.25);
-    if (distance < threshold) return;
-
-    if (!this.engine?.isAdjacent(cell, this.selectedCell)) return;
+    const target = this.getDragTarget(dx, dy, this.selectedCell);
+    if (!target) return;
     this.dragSwapTriggered = true;
     this.pointerDown = false;
-    void this.trySwap(this.selectedCell, cell);
+    void this.trySwap(this.selectedCell, target);
     this.setSelectedCell(null);
     this.releasePointerCapture(event);
     this.dragStart = null;
@@ -170,25 +178,47 @@ export class Match3Game extends GameInterface {
     this.pointerDown = false;
     this.releasePointerCapture(event);
     if (this.inputLocked) return;
+    this.resetIdleHint();
 
+    if (!this.selectedCell) return;
     const cell = this.getCellFromEvent(event) || this.lastHoverCell;
-    if (!cell || !this.selectedCell) return;
+    const finalize = () => {
+      this.dragStart = null;
+      this.lastHoverCell = null;
+    };
+
+    const dx = event.clientX - (this.dragStart?.x ?? event.clientX);
+    const dy = event.clientY - (this.dragStart?.y ?? event.clientY);
+    const dragTarget = this.getDragTarget(dx, dy, this.selectedCell);
+    if (dragTarget) {
+      await this.trySwap(this.selectedCell, dragTarget);
+      this.setSelectedCell(null);
+      finalize();
+      return;
+    }
+
+    if (!cell) {
+      this.setSelectedCell(null);
+      finalize();
+      return;
+    }
 
     const sameCell = cell.row === this.selectedCell.row && cell.col === this.selectedCell.col;
     if (sameCell) {
       this.setSelectedCell(null);
+      finalize();
       return;
     }
 
     if (!this.engine?.isAdjacent(cell, this.selectedCell)) {
       this.setSelectedCell(cell);
+      finalize();
       return;
     }
 
     await this.trySwap(this.selectedCell, cell);
     this.setSelectedCell(null);
-    this.dragStart = null;
-    this.lastHoverCell = null;
+    finalize();
   };
 
   handlePointerCancel = () => {
@@ -198,6 +228,7 @@ export class Match3Game extends GameInterface {
     this.dragStart = null;
     this.lastHoverCell = null;
     this.dragSwapTriggered = false;
+    this.resetIdleHint();
   };
 
   releasePointerCapture(event) {
@@ -216,11 +247,12 @@ export class Match3Game extends GameInterface {
     this.selectedCell = cell;
     if (this.renderer) {
       this.renderer.setSelection(cell);
+      this.renderer.clearHint();
     }
   }
 
   getCellFromEvent(event) {
-    if (!this.boardEl || !this.renderer) return null;
+    if (!this.boardEl || !this.renderer || !this.engine) return null;
     const rect = this.boardEl.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -246,6 +278,8 @@ export class Match3Game extends GameInterface {
 
   async trySwap(from, to) {
     if (!this.engine || !this.renderer) return;
+    this.resetIdleHint();
+    this.renderer.clearHint();
     this.inputLocked = true;
     const tileA = this.engine.getTile(from);
     const tileB = this.engine.getTile(to);
@@ -257,7 +291,14 @@ export class Match3Game extends GameInterface {
       await this.renderer.animateSwap(tileA, tileB, from, to);
       const result = this.engine.resolveSwap(from, to);
       if (result.matched) {
-        const gained = result.cleared * SCORE_PER_TILE + (result.bonus || 0);
+        const cascades = Math.max(1, result.cascades || 1);
+        const comboMultiplier = 1 + Math.max(0, cascades - 1) * 0.35;
+        this.currentStreak += 1;
+        this.maxStreak = Math.max(this.maxStreak, this.currentStreak);
+        this.maxComboMultiplier = Math.max(this.maxComboMultiplier, comboMultiplier);
+        const baseScore = result.cleared * SCORE_PER_TILE + (result.bonus || 0);
+        const streakBonus = Math.max(0, this.currentStreak - 1) * 120;
+        const gained = Math.round(baseScore * comboMultiplier + streakBonus);
         this.score += gained;
         if (this.score > this.bestScore) {
           this.bestScore = this.score;
@@ -271,8 +312,16 @@ export class Match3Game extends GameInterface {
         this.syncHud();
         this.saveState();
         this.render();
+        if (cascades > 1) {
+          const intensity = Math.min(0.35, 0.18 + (cascades - 1) * 0.06);
+          this.renderer.flashBoard(0xffd36a, intensity);
+        }
+        if (this.movesRemaining > 0) {
+          this.ensurePlayableBoard();
+        }
         this.checkGameOver();
       } else {
+        this.currentStreak = 0;
         await this.renderer.animateSwap(tileA, tileB, to, from);
         this.render();
         await this.renderer.animateReject(tileA, tileB);
@@ -282,6 +331,7 @@ export class Match3Game extends GameInterface {
       }
     } finally {
       this.inputLocked = false;
+      this.scheduleIdleHint();
     }
   }
 
@@ -297,6 +347,7 @@ export class Match3Game extends GameInterface {
     this.currentLevel = levelId;
     this.storage = new Match3StorageManager(levelId);
     this.bestScore = this.storage.getBestScore();
+    const target = level.target;
 
     this.engine = new Match3Engine({
       rows: level.board,
@@ -305,17 +356,40 @@ export class Match3Game extends GameInterface {
     });
 
     const saved = useSaved ? this.storage.getGameState() : null;
+    let loadedFromSave = false;
     if (saved && saved.grid && saved.score !== undefined) {
-      const loaded = this.engine.loadState(saved.grid);
-      if (loaded) {
-        this.score = saved.score || 0;
-        this.movesRemaining = saved.movesRemaining ?? level.moves;
-        this.turnsUsed = saved.turnsUsed || 0;
+      const grid = saved.grid;
+      const gridValid = grid.rows === level.board && grid.cols === level.board && Array.isArray(grid.tiles);
+      const levelMatches = saved.levelId === undefined || saved.levelId === levelId;
+      const targetMatches = saved.target === undefined || saved.target === target;
+      const movesRemaining = saved.movesRemaining ?? level.moves;
+      const score = Number(saved.score) || 0;
+      const runStillActive = movesRemaining > 0 && score < target;
+
+      if (gridValid && levelMatches && targetMatches && runStillActive) {
+        const loaded = this.engine.loadState(grid);
+        if (loaded) {
+          this.score = score;
+          this.movesRemaining = movesRemaining;
+          this.turnsUsed = saved.turnsUsed || 0;
+          this.currentStreak = saved.currentStreak || 0;
+          this.maxStreak = saved.maxStreak || 0;
+          this.maxComboMultiplier = saved.maxComboMultiplier || 1;
+          this.totalShuffles = saved.totalShuffles || 0;
+          loadedFromSave = true;
+        }
       }
-    } else {
+    }
+
+    if (!loadedFromSave) {
+      this.storage.clearGameState();
       this.score = 0;
       this.movesRemaining = level.moves;
       this.turnsUsed = 0;
+      this.currentStreak = 0;
+      this.maxStreak = 0;
+      this.maxComboMultiplier = 1;
+      this.totalShuffles = 0;
     }
 
     if (this.renderer) {
@@ -325,15 +399,24 @@ export class Match3Game extends GameInterface {
     this.setSelectedCell(null);
     this.syncHud();
     this.render();
+    this.ensurePlayableBoard({ silent: true });
+    this.scheduleIdleHint();
   }
 
   saveState() {
     if (!this.storage || !this.engine) return;
+    const level = this.getLevelConfig(this.currentLevel);
     this.storage.setGameState({
+      levelId: this.currentLevel,
+      target: level?.target ?? null,
       grid: this.engine.toState(),
       score: this.score,
       movesRemaining: this.movesRemaining,
       turnsUsed: this.turnsUsed,
+      currentStreak: this.currentStreak,
+      maxStreak: this.maxStreak,
+      maxComboMultiplier: this.maxComboMultiplier,
+      totalShuffles: this.totalShuffles,
     });
   }
 
@@ -349,6 +432,11 @@ export class Match3Game extends GameInterface {
 
   finishLevel(isWin) {
     this.inputLocked = true;
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+      this.hintTimer = null;
+    }
+    this.renderer?.clearHint();
     if (this.score > this.bestScore && this.storage) {
       this.storage.setBestScore(this.score);
       this.bestScore = this.score;
@@ -362,6 +450,13 @@ export class Match3Game extends GameInterface {
       mode: isWin ? "win" : "gameover",
       level: this.currentLevel,
       gameId: this.gameId,
+      summary: {
+        movesUsed: this.turnsUsed,
+        movesRemaining: this.movesRemaining,
+        maxComboMultiplier: Number(this.maxComboMultiplier.toFixed(2)),
+        maxStreak: this.maxStreak,
+        shuffles: this.totalShuffles,
+      },
     };
     const evt = new CustomEvent("game:over", { detail, bubbles: true });
     this.container.dispatchEvent(evt);
@@ -475,6 +570,66 @@ export class Match3Game extends GameInterface {
     }
   }
 
+  getDragTarget(dx, dy, origin) {
+    if (!this.renderer || !this.engine || !origin) return null;
+    const distance = Math.hypot(dx, dy);
+    const threshold = Math.max(10, this.renderer.metrics.tileSize * 0.22);
+    if (distance < threshold) return null;
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const target = {
+      row: origin.row + (horizontal ? 0 : dy > 0 ? 1 : -1),
+      col: origin.col + (horizontal ? (dx > 0 ? 1 : -1) : 0),
+    };
+    if (target.row < 0 || target.col < 0 || target.row >= this.engine.rows || target.col >= this.engine.cols) {
+      return null;
+    }
+    return target;
+  }
+
+  ensurePlayableBoard({ silent } = {}) {
+    if (!this.engine) return false;
+    if (this.engine.hasValidMove()) return false;
+    const shuffled = this.engine.shuffle();
+    if (shuffled) {
+      this.totalShuffles += 1;
+      this.currentStreak = 0;
+      this.render();
+      if (!silent) {
+        this.renderer?.flashBoard(0xffffff, 0.22);
+      }
+      this.saveState();
+    }
+    return shuffled;
+  }
+
+  scheduleIdleHint() {
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+    }
+    this.hintTimer = setTimeout(() => {
+      if (this.pointerDown || this.inputLocked || !this.engine || !this.renderer) {
+        this.scheduleIdleHint();
+        return;
+      }
+      const hint = this.engine.findValidSwap();
+      if (!hint) {
+        this.ensurePlayableBoard();
+        return;
+      }
+      this.renderer.showHint([hint.from, hint.to]);
+    }, this.idleHintDelay);
+  }
+
+  resetIdleHint() {
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+    }
+    if (this.renderer) {
+      this.renderer.clearHint();
+    }
+    this.scheduleIdleHint();
+  }
+
   getTemplate() {
     return `
       <div class="match3-container">
@@ -522,11 +677,22 @@ export class Match3Game extends GameInterface {
       this.renderer.resize();
     }
     this.render();
+    this.scheduleIdleHint();
   }
 
-  pause() {}
+  pause() {
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+      this.hintTimer = null;
+    }
+    this.renderer?.clearHint();
+  }
 
   destroy() {
+    if (this.hintTimer) {
+      clearTimeout(this.hintTimer);
+      this.hintTimer = null;
+    }
     if (this.boardEl) {
       this.boardEl.removeEventListener("pointerdown", this.handlePointerDown);
       this.boardEl.removeEventListener("pointermove", this.handlePointerMove);

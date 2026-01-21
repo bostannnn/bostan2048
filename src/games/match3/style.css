@@ -55,7 +55,7 @@ body[data-view="match3"] #view-match3.view {
 
 .match3-stage {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   flex: 1;
   width: 100%;

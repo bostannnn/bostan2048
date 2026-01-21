@@ -62,7 +62,7 @@ Storage keys (localStorage):
 *   `match3:level-<n>:bestScore`, `match3:level-<n>:gameState`
 
 Events:
-*   `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode? }`)
+*   `game:over` (CustomEvent with `{ score, stats: { turns, undos }, level?, gameId?, mode?, summary? }`)
 *   `economy:changed`, `economy:inventory`, `economy:run` (AppBus)
 
 ## 3. Rendering
@@ -82,11 +82,18 @@ Events:
 ### 3.6 Animation & Audio
 * **Complex Motion:** GSAP drives Match-3 sequencing (swap, drop, spawn) and is available for complex UI transitions.
 * **Audio:** Howler.js is planned for audio sprites and background loops, but not yet integrated.
-* **Haptics:** `navigator.vibrate()` is not wired yet; future work may route haptics through `GameInterface`.
+* **Haptics:** Match-3 uses `navigator.vibrate()` for invalid swap feedback when available; future work may route haptics through `GameInterface`.
 
 ### 3.7 Tooling & Tests
 * **Tests:** `npm test` runs a lightweight Node-based harness for 2048 and leaderboard logic.
 * **Deployment:** GitHub Actions deploys GitHub Pages from `gh-pages` (manual prod, auto dev). Builds use `VITE_BASE` and `VITE_BUILD_TAG` to set the base path and DEV PWA icon.
+
+### 3.8 Manual QA (Match-3)
+* Swipe in all directions and release in gaps between tiles; swaps should still trigger reliably.
+* Attempt invalid swaps; confirm flash/shake feedback + haptic pulse.
+* Idle for a few seconds; confirm hint pulse appears on a valid move.
+* Force a dead board (play until no moves); confirm auto-shuffle + board flash.
+* Verify combo/streak scoring changes and the end-of-level summary on game over/win.
 
 ## 4. Firebase / Leaderboards
 *   Config: `window.firebaseConfig` is defined in `index.html` and loaded before `app.js`; replace with your project keys as needed.
@@ -104,7 +111,8 @@ Events:
 *   Input: Pointer-based swipe handling on a full-height `.game-stage` wrapper with `touch-action: none` keeps the entire play area (including the bottom padding beneath the board) interactive without blocking header buttons.
 *   Input polish: while the 2048 view is active, app scrolling is locked and tap highlights/text selection are suppressed (inputs still allow selection).
 *   Performance: 2048 background effects pause when the view is inactive.
-*   Match-3 input supports drag-to-swap with a reject animation + haptic pulse on invalid moves.
+*   Match-3 input supports drag-to-swap with direction-based fallback, idle hint pulses (~7s idle), invalid swap flash/shake + haptic feedback, auto-shuffles on dead boards, richer clear/cascade visuals, and stale save validation.
+*   Match-3 scoring adds combo multipliers + streak bonuses, and the end-of-level sheet includes a summary of run stats.
 *   2048 swipe input includes a pointer-up fallback to reduce missed swipes.
 *   Levels: 2048 ships with three levels; Match-3 ships with ten levels. The next level unlocks after hitting the prior target.
 *   Level select: both games use the shared level selector overlay and Levels header button.

@@ -73,13 +73,13 @@
   --ui-layout-view-padding: var(--ui-space-4);
   --ui-layout-view-gap: var(--ui-space-3);
   --ui-layout-game-view-padding-top: var(--ui-space-2);
-  --ui-layout-game-container-gap: var(--ui-space-4);
+  --ui-layout-game-container-gap: var(--ui-space-3);
   --ui-layout-game-container-padding-top: var(--ui-space-3);
   --ui-layout-game-container-padding-bottom: var(--ui-space-5);
   --ui-layout-game-header-gap: var(--ui-space-3);
   --ui-layout-game-header-padding-y: var(--ui-space-3);
   --ui-layout-game-header-padding-x: var(--ui-space-4);
-  --ui-layout-game-stage-top: var(--ui-space-5);
+  --ui-layout-game-stage-top: var(--ui-space-3);
   --ui-layout-game-stage-bottom: 72px;
   
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);

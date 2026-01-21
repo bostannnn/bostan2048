@@ -19,6 +19,10 @@ export class Match3Renderer {
       boardHeight: 0,
       radius: 0,
     };
+    this.hintTween = null;
+    this.hintOverlay = null;
+    this.rejectOverlay = null;
+    this.flashOverlay = null;
     this.ready = this.init();
   }
 
@@ -45,13 +49,21 @@ export class Match3Renderer {
     this.root = new Container();
     this.backgroundLayer = new Container();
     this.tileLayer = new Container();
+    this.effectLayer = new Container();
     this.tileLayer.sortableChildren = true;
     this.root.addChild(this.backgroundLayer);
     this.root.addChild(this.tileLayer);
+    this.root.addChild(this.effectLayer);
     this.app.stage.addChild(this.root);
 
     this.selection = new Graphics();
+    this.hintOverlay = new Graphics();
+    this.backgroundLayer.addChild(this.hintOverlay);
     this.backgroundLayer.addChild(this.selection);
+    this.rejectOverlay = new Graphics();
+    this.flashOverlay = new Graphics();
+    this.effectLayer.addChild(this.rejectOverlay);
+    this.effectLayer.addChild(this.flashOverlay);
 
     if (typeof ResizeObserver !== "undefined") {
       this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -113,6 +125,44 @@ export class Match3Renderer {
     this.selection.stroke({ color: 0xffffff, width: Math.max(2, tileSize * 0.06), alpha: 0.8 });
   }
 
+  clearHint() {
+    if (this.hintTween) {
+      this.hintTween.kill();
+      this.hintTween = null;
+    }
+    if (this.hintOverlay) {
+      this.hintOverlay.clear();
+      this.hintOverlay.alpha = 0;
+    }
+  }
+
+  showHint(cells) {
+    if (!this.hintOverlay || !cells || !cells.length) return;
+    if (this.hintTween) {
+      this.hintTween.kill();
+      this.hintTween = null;
+    }
+    this.hintOverlay.clear();
+    const { tileSize, radius } = this.metrics;
+    cells.forEach((cell) => {
+      const pos = this.getCellPosition(cell.row, cell.col);
+      this.hintOverlay.roundRect(pos.x, pos.y, tileSize, tileSize, radius);
+    });
+    this.hintOverlay.stroke({
+      color: 0xffd36a,
+      width: Math.max(2, Math.round(tileSize * 0.08)),
+      alpha: 0.9,
+    });
+    this.hintOverlay.alpha = 0.2;
+    this.hintTween = gsap.to(this.hintOverlay, {
+      alpha: 0.9,
+      duration: 0.7,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut",
+    });
+  }
+
   resize() {
     if (!this.hostEl || !this.app) return;
     const width = this.hostEl.clientWidth;
@@ -121,6 +171,7 @@ export class Match3Renderer {
 
     this.app.renderer.resize(width, height);
 
+    this.clearHint();
     const spacing = Math.max(4, Math.round(Math.min(width, height) * 0.02));
     const tileSize = Math.floor(
       (Math.min(width, height) - spacing * (this.cols + 1)) / this.cols
@@ -168,6 +219,7 @@ export class Match3Renderer {
       }
     }
     this.backgroundLayer.addChild(grid);
+    this.backgroundLayer.addChild(this.hintOverlay);
     this.backgroundLayer.addChild(this.selection);
   }
 
@@ -214,6 +266,10 @@ export class Match3Renderer {
     this.tiles.set(tile, container);
     const dest = this.getContainerPosition(row, col);
     container.position.set(dest.x, dest.y);
+    container.__targetX = dest.x;
+    container.__targetY = dest.y;
+    container.__lastRow = row;
+    container.__lastCol = col;
     container.scale.set(0);
     this.animateScale(container, 1);
   }
@@ -221,21 +277,52 @@ export class Match3Renderer {
   updateTile(tile, row, col) {
     const container = this.tiles.get(tile);
     if (!container) return;
-    this.renderTileVisual(container, tile);
+    if (
+      container.__lastType !== tile.type ||
+      container.__lastSpecial !== tile.special ||
+      container.__lastSize !== this.metrics.tileSize
+    ) {
+      this.renderTileVisual(container, tile);
+    }
     const dest = this.getContainerPosition(row, col);
     this.animatePosition(container, dest);
+    container.__lastRow = row;
+    container.__lastCol = col;
   }
 
   removeTile(tile) {
     const container = this.tiles.get(tile);
     if (!container) return;
     this.tiles.delete(tile);
-    this.animateRemoval(container);
+    this.animateRemoval(container, tile);
   }
 
   renderTileVisual(container, tile) {
     const { tileSize, radius } = this.metrics;
+    if (container.__glowTween) {
+      container.__glowTween.kill();
+      container.__glowTween = null;
+    }
     container.removeChildren();
+
+    if (tile.special) {
+      const glow = new Graphics();
+      glow.roundRect(0, 0, tileSize, tileSize, radius);
+      glow.fill({ color: 0xffe59f, alpha: 0.35 });
+      glow.blendMode = "screen";
+      glow.alpha = 0.4;
+      glow.pivot.set(tileSize / 2, tileSize / 2);
+      glow.position.set(tileSize / 2, tileSize / 2);
+      glow.scale.set(0.92);
+      container.addChild(glow);
+      container.__glowTween = gsap.to(glow, {
+        alpha: 0.85,
+        duration: 0.8,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+      });
+    }
 
     const texture = this.gemTextures[tile.type];
     if (texture) {
@@ -266,6 +353,9 @@ export class Match3Renderer {
     }
 
     container.pivot.set(tileSize / 2, tileSize / 2);
+    container.__lastType = tile.type;
+    container.__lastSpecial = tile.special;
+    container.__lastSize = tileSize;
   }
 
   refreshTiles() {
@@ -274,6 +364,8 @@ export class Match3Renderer {
       const pos = this.findTilePosition(tile);
       if (pos) {
         container.position.set(pos.x, pos.y);
+        container.__targetX = pos.x;
+        container.__targetY = pos.y;
       }
     });
   }
@@ -291,11 +383,23 @@ export class Match3Renderer {
   }
 
   animatePosition(container, dest) {
+    const distance = Math.hypot(dest.x - container.position.x, dest.y - container.position.y);
+    const distanceFactor = Math.min(1.2, distance / Math.max(1, this.metrics.tileSize));
+    const duration = Math.min(0.28, 0.12 + distanceFactor * 0.08);
+    if (Math.abs(dest.x - container.position.x) < 0.4 && Math.abs(dest.y - container.position.y) < 0.4) {
+      container.position.set(dest.x, dest.y);
+      container.__targetX = dest.x;
+      container.__targetY = dest.y;
+      return;
+    }
+    if (container.__targetX === dest.x && container.__targetY === dest.y) return;
+    container.__targetX = dest.x;
+    container.__targetY = dest.y;
     gsap.killTweensOf(container.position);
     gsap.to(container.position, {
       x: dest.x,
       y: dest.y,
-      duration: 0.18,
+      duration,
       ease: "power3.out",
     });
   }
@@ -310,21 +414,37 @@ export class Match3Renderer {
     });
   }
 
-  animateRemoval(container) {
+  animateRemoval(container, tile) {
     gsap.killTweensOf(container);
     gsap.killTweensOf(container.scale);
+    if (container.__glowTween) {
+      container.__glowTween.kill();
+      container.__glowTween = null;
+    }
+    if (tile?.special) {
+      this.spawnBurst(container.position.x, container.position.y, "burst", { count: 3, spread: 0.6, scale: 0.7 });
+    } else {
+      this.spawnBurst(container.position.x, container.position.y, "sparkle", { count: 2, spread: 0.45, scale: 0.5 });
+    }
     gsap.to(container, {
       alpha: 0,
       duration: 0.16,
       ease: "power1.out",
     });
-    gsap.to(container.scale, {
-      x: 0.2,
-      y: 0.2,
-      duration: 0.2,
-      ease: "back.in(1.6)",
-      onComplete: () => container.destroy({ children: true }),
-    });
+    gsap
+      .timeline({ onComplete: () => container.destroy({ children: true }) })
+      .to(container.scale, {
+        x: 1.08,
+        y: 1.08,
+        duration: 0.08,
+        ease: "power1.out",
+      })
+      .to(container.scale, {
+        x: 0.2,
+        y: 0.2,
+        duration: 0.18,
+        ease: "back.in(1.6)",
+      });
   }
 
   setLastGrid(grid) {
@@ -354,6 +474,10 @@ export class Match3Renderer {
           onComplete: () => {
             containerA.zIndex = prevA;
             containerB.zIndex = prevB;
+            containerA.__targetX = posB.x;
+            containerA.__targetY = posB.y;
+            containerB.__targetX = posA.x;
+            containerB.__targetY = posA.y;
             resolve();
           },
         })
@@ -392,6 +516,7 @@ export class Match3Renderer {
     gsap.killTweensOf(targets.map((target) => target.scale));
 
     return new Promise((resolve) => {
+      this.flashReject(targets.map((target) => target.position));
       gsap.to(targets, {
         rotation: 0.12,
         duration: 0.06,
@@ -416,12 +541,107 @@ export class Match3Renderer {
     });
   }
 
+  flashReject(positions) {
+    if (!this.rejectOverlay || !positions.length) return;
+    const { tileSize, radius } = this.metrics;
+    this.rejectOverlay.clear();
+    positions.forEach((pos) => {
+      this.rejectOverlay.roundRect(
+        pos.x - tileSize / 2,
+        pos.y - tileSize / 2,
+        tileSize,
+        tileSize,
+        radius
+      );
+    });
+    this.rejectOverlay.stroke({ color: 0xff5d5d, width: Math.max(2, Math.round(tileSize * 0.07)), alpha: 0.9 });
+    this.rejectOverlay.alpha = 0.9;
+    gsap.killTweensOf(this.rejectOverlay);
+    gsap.to(this.rejectOverlay, {
+      alpha: 0,
+      duration: 0.25,
+      ease: "power1.out",
+      onComplete: () => {
+        this.rejectOverlay.clear();
+      },
+    });
+  }
+
+  flashBoard(color = 0xffffff, alpha = 0.18) {
+    if (!this.flashOverlay) return;
+    const { offsetX, offsetY, boardWidth, boardHeight, radius } = this.metrics;
+    this.flashOverlay.clear();
+    this.flashOverlay.roundRect(offsetX, offsetY, boardWidth, boardHeight, radius * 0.8);
+    this.flashOverlay.fill({ color, alpha });
+    this.flashOverlay.alpha = 0;
+    gsap.killTweensOf(this.flashOverlay);
+    gsap.to(this.flashOverlay, {
+      alpha: 1,
+      duration: 0.08,
+      yoyo: true,
+      repeat: 1,
+      ease: "power1.out",
+      onComplete: () => {
+        this.flashOverlay.clear();
+      },
+    });
+  }
+
+  spawnBurst(x, y, textureKey, options = {}) {
+    const texture = this.specialTextures[textureKey];
+    if (!texture || !this.effectLayer) return;
+    const count = options.count || 1;
+    const spread = options.spread ?? 0.3;
+    const baseScale = options.scale ?? 0.6;
+    for (let i = 0; i < count; i += 1) {
+      const sprite = new Sprite(texture);
+      sprite.anchor.set(0.5);
+      const offset = (Math.random() - 0.5) * this.metrics.tileSize * spread;
+      const offsetY = (Math.random() - 0.5) * this.metrics.tileSize * spread;
+      sprite.position.set(x + offset, y + offsetY);
+      sprite.alpha = 0.9;
+      const scale = Math.max(0.2, this.metrics.tileSize / texture.width) * baseScale;
+      sprite.scale.set(scale);
+      this.effectLayer.addChild(sprite);
+      gsap.to(sprite, {
+        alpha: 0,
+        rotation: Math.random() * 0.6 - 0.3,
+        duration: 0.35,
+        ease: "power2.out",
+        onComplete: () => sprite.destroy(),
+      });
+      gsap.to(sprite.scale, {
+        x: scale * 1.6,
+        y: scale * 1.6,
+        duration: 0.35,
+        ease: "power2.out",
+      });
+    }
+  }
+
   destroy() {
     if (this.resizeObserver && this.hostEl) {
       this.resizeObserver.unobserve(this.hostEl);
       this.resizeObserver = null;
     }
+    if (this.hintTween) {
+      this.hintTween.kill();
+      this.hintTween = null;
+    }
+    if (this.hintOverlay) {
+      gsap.killTweensOf(this.hintOverlay);
+    }
+    if (this.rejectOverlay) {
+      gsap.killTweensOf(this.rejectOverlay);
+    }
+    if (this.flashOverlay) {
+      gsap.killTweensOf(this.flashOverlay);
+    }
     this.tiles.forEach((container) => {
+      if (container.__glowTween) {
+        container.__glowTween.kill();
+        container.__glowTween = null;
+      }
       gsap.killTweensOf(container);
       gsap.killTweensOf(container.position);
       gsap.killTweensOf(container.scale);
