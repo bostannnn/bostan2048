@@ -7,8 +7,8 @@
     <meta name="theme-color" content="#F2F2F7">
     <link rel="icon" href="assets/levels/level-1/2048.jpg" sizes="192x192">
     <link rel="apple-touch-icon" href="assets/levels/level-1/2048.jpg">
-  <script type="module" crossorigin src="/bostan2048/assets/index-D0XyrWXH.js"></script>
-  <link rel="stylesheet" crossorigin href="/bostan2048/assets/index-DIsg5uwo.css">
+  <script type="module" crossorigin src="/bostan2048/assets/index-K6xbK01Z.js"></script>
+  <link rel="stylesheet" crossorigin href="/bostan2048/assets/index-QM8qHgpj.css">
 <link rel="manifest" href="/bostan2048/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/bostan2048/registerSW.js"></script></head>
 <body>
 
@@ -201,11 +201,21 @@
                 </div>
                 <button id="pwa-refresh" class="ui-button secondary small">Refresh</button>
             </div>
-            <div class="settings-row settings-row-column">
+            <div class="settings-row settings-row-column" id="dev-tools-section">
                 <span class="ui-title settings-title">Dev Tools</span>
                 <div class="settings-button-row">
                     <button id="dev-game-over" class="ui-button secondary small">Force Game Over</button>
                     <button id="dev-add-2048" class="ui-button secondary small">Add 2048 Tile</button>
+                </div>
+            </div>
+            
+            <div class="settings-row settings-row-column" id="feature-flags-section" style="display: none;">
+                <span class="ui-title settings-title">Feature Flags</span>
+                <div id="feature-flags-list" class="feature-flags-list">
+                    <!-- Dynamically populated -->
+                </div>
+                <div class="settings-button-row" style="margin-top: 8px;">
+                    <button id="reset-feature-flags" class="ui-button secondary small">Reset to Defaults</button>
                 </div>
             </div>
         </div>
