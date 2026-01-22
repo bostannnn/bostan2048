@@ -761,13 +761,19 @@ import '/core.js';
    * Apply feature flags to hide/show DOM elements
    */
   function applyFeatureFlags() {
-    // Hide navbar if disabled
+    // Show/hide navbar based on feature flag
     const navbar = document.querySelector('.bottom-nav');
-    if (navbar && !FEATURES.navbar) {
-      navbar.style.display = 'none';
+    if (navbar) {
+      navbar.style.display = FEATURES.navbar ? 'flex' : 'none';
     }
     
-    // Hide views for disabled features
+    // Show/hide coins display
+    const coinsDisplay = document.querySelector('.coins-display');
+    if (coinsDisplay) {
+      coinsDisplay.style.display = FEATURES.showCoins ? '' : 'none';
+    }
+    
+    // Hide views for disabled features (only hide, don't remove - allows re-enable)
     const viewMappings = {
       'view-character': FEATURES.characterCreator,
       'view-match3': FEATURES.gameMatch3,
@@ -777,8 +783,23 @@ import '/core.js';
     
     Object.entries(viewMappings).forEach(([viewId, enabled]) => {
       const view = document.getElementById(viewId);
-      if (view && !enabled) {
-        view.remove(); // Remove from DOM entirely
+      if (view) {
+        view.style.display = enabled ? '' : 'none';
+      }
+    });
+    
+    // Show/hide nav buttons based on features
+    const navButtonMappings = {
+      'character': FEATURES.characterCreator,
+      'match3': FEATURES.gameMatch3,
+      'city': FEATURES.gameCity,
+      'shop': FEATURES.shop,
+    };
+    
+    Object.entries(navButtonMappings).forEach(([viewName, enabled]) => {
+      const btn = document.querySelector(`.nav-button[data-view="${viewName}"]`);
+      if (btn) {
+        btn.style.display = enabled ? '' : 'none';
       }
     });
     

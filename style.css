@@ -71,7 +71,7 @@ body[data-view="2048"] #view-2048.view {
 
 /* Floating Navbar - Hidden for now */
 .bottom-nav {
-  display: none !important;
+  display: none; /* Controlled by feature flags in JS */
   position: fixed;
   bottom: 24px;
   bottom: calc(24px + env(safe-area-inset-bottom));
