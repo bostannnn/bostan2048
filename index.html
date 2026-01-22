@@ -207,11 +207,21 @@
                 </div>
                 <button id="pwa-refresh" class="ui-button secondary small">Refresh</button>
             </div>
-            <div class="settings-row settings-row-column">
+            <div class="settings-row settings-row-column" id="dev-tools-section">
                 <span class="ui-title settings-title">Dev Tools</span>
                 <div class="settings-button-row">
                     <button id="dev-game-over" class="ui-button secondary small">Force Game Over</button>
                     <button id="dev-add-2048" class="ui-button secondary small">Add 2048 Tile</button>
+                </div>
+            </div>
+            
+            <div class="settings-row settings-row-column" id="feature-flags-section" style="display: none;">
+                <span class="ui-title settings-title">Feature Flags</span>
+                <div id="feature-flags-list" class="feature-flags-list">
+                    <!-- Dynamically populated -->
+                </div>
+                <div class="settings-button-row" style="margin-top: 8px;">
+                    <button id="reset-feature-flags" class="ui-button secondary small">Reset to Defaults</button>
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { CityGame } from './src/games/city/index.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
 import { characterManager } from './src/core/CharacterManager.js';
 import { showCharacterCreator } from './src/components/CharacterCreator.js';
+import { FEATURES, isFeatureEnabled, getFeatureFlagInfo, setFeatureFlag, resetFeatureFlags } from './src/config/features.js';
 import * as PIXI from 'pixi.js';
 window.PIXI = PIXI;
 import '/core.js';
@@ -11,7 +12,7 @@ import '/core.js';
 (function () {
   "use strict";
 
-  console.log("App Initialized v3");
+  console.log("App Initialized v4 - Feature Flags Enabled");
 
   const views = {};
   const navButtons = [];
@@ -24,11 +25,11 @@ import '/core.js';
   const playerNameKey = "arcadeCityPlayerName";
   let pendingScore = null;
 
-  const games = {
-      '2048': new Photo2048(),
-      'match3': new Match3Game(),
-      'city': new CityGame()
-  };
+  // Only instantiate enabled games
+  const games = {};
+  if (FEATURES.game2048) games['2048'] = new Photo2048();
+  if (FEATURES.gameMatch3) games['match3'] = new Match3Game();
+  if (FEATURES.gameCity) games['city'] = new CityGame();
 
   let activeGameId = "2048";
 
@@ -323,6 +324,75 @@ import '/core.js';
       devAdd2048.addEventListener("click", () => {
         const game = games["2048"];
         game?.add2048Tile?.();
+      });
+    }
+    
+    // Feature flags UI (only if devTools enabled)
+    setupFeatureFlagsUI();
+  }
+  
+  function setupFeatureFlagsUI() {
+    const section = document.getElementById("feature-flags-section");
+    const list = document.getElementById("feature-flags-list");
+    const resetBtn = document.getElementById("reset-feature-flags");
+    const devToolsSection = document.getElementById("dev-tools-section");
+    
+    if (!FEATURES.devTools) {
+      // Hide dev tools section entirely
+      if (devToolsSection) devToolsSection.style.display = 'none';
+      return;
+    }
+    
+    // Show feature flags section
+    if (section) section.style.display = '';
+    
+    if (!list) return;
+    
+    // Render feature flag toggles
+    const flags = getFeatureFlagInfo();
+    list.innerHTML = flags.map(flag => `
+      <div class="feature-flag-item">
+        <span class="feature-flag-label ${flag.isOverridden ? 'overridden' : ''}">${flag.label}</span>
+        <label class="ui-toggle">
+          <input type="checkbox" data-feature="${flag.key}" ${flag.currentValue ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>
+    `).join('');
+    
+    // Handle toggle changes
+    list.addEventListener('change', (e) => {
+      const checkbox = e.target;
+      if (checkbox.dataset.feature) {
+        setFeatureFlag(checkbox.dataset.feature, checkbox.checked);
+        // Update label style
+        const label = checkbox.closest('.feature-flag-item')?.querySelector('.feature-flag-label');
+        const flagInfo = getFeatureFlagInfo().find(f => f.key === checkbox.dataset.feature);
+        if (label && flagInfo) {
+          label.classList.toggle('overridden', flagInfo.isOverridden);
+        }
+        // Prompt to refresh
+        if (confirm('Refresh now to apply changes?')) {
+          location.reload();
+        }
+      }
+    });
+    
+    // Reset button
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        resetFeatureFlags();
+        // Re-render toggles
+        const updatedFlags = getFeatureFlagInfo();
+        list.querySelectorAll('input[data-feature]').forEach(checkbox => {
+          const flag = updatedFlags.find(f => f.key === checkbox.dataset.feature);
+          if (flag) {
+            checkbox.checked = flag.currentValue;
+            const label = checkbox.closest('.feature-flag-item')?.querySelector('.feature-flag-label');
+            if (label) label.classList.remove('overridden');
+          }
+        });
+        alert('Feature flags reset to defaults. Refresh to apply.');
       });
     }
   }
@@ -630,14 +700,25 @@ import '/core.js';
     if (window.firebaseConfig && window.FirebaseManager && !window.FirebaseManager.enabled) {
       window.FirebaseManager.configure(window.firebaseConfig);
     }
+    
+    // Apply feature flags to DOM
+    applyFeatureFlags();
+    
     setupLeaderboard();
     setupSettingsOverlay();
     setupViews();
     const openConfirm = setupConfirmOverlay();
     setupGameOverListener();
-    setupNav();
+    
+    if (FEATURES.navbar) {
+      setupNav();
+    }
+    
     setupPicrossStub();
-    setupCharacterView();
+    
+    if (FEATURES.characterCreator) {
+      setupCharacterView();
+    }
 
     if (openConfirm) {
       Object.values(games).forEach((game) => {
@@ -645,23 +726,27 @@ import '/core.js';
       });
     }
 
-    if (window.EconomyManager) {
+    if (FEATURES.gameCity && window.EconomyManager) {
       games.city?.setInventory?.(window.EconomyManager.getInventory());
     }
 
-    loadShopCatalog().then(() => {
-      games.city?.setCatalog?.(state.cityItems);
-    });
+    if (FEATURES.shop) {
+      loadShopCatalog().then(() => {
+        if (FEATURES.gameCity) {
+          games.city?.setCatalog?.(state.cityItems);
+        }
+      });
+    }
 
     bindEconomyEvents();
     
     // Expose showView globally for other modules
     window.showView = showView;
     
-    // Check if character needs to be created (first launch)
+    // Initialize app with feature flags
     async function initializeApp() {
-      // Show character creator if first time user
-      if (!characterManager.hasCharacter()) {
+      // Show character creator if enabled and first time user
+      if (FEATURES.characterCreator && !characterManager.hasCharacter()) {
         await showCharacterCreator({ container: document.body });
       }
       
@@ -671,4 +756,55 @@ import '/core.js';
     
     initializeApp();
   });
+  
+  /**
+   * Apply feature flags to hide/show DOM elements
+   */
+  function applyFeatureFlags() {
+    // Hide navbar if disabled
+    const navbar = document.querySelector('.bottom-nav');
+    if (navbar && !FEATURES.navbar) {
+      navbar.style.display = 'none';
+    }
+    
+    // Hide views for disabled features
+    const viewMappings = {
+      'view-character': FEATURES.characterCreator,
+      'view-match3': FEATURES.gameMatch3,
+      'view-city': FEATURES.gameCity,
+      'view-shop': FEATURES.shop,
+    };
+    
+    Object.entries(viewMappings).forEach(([viewId, enabled]) => {
+      const view = document.getElementById(viewId);
+      if (view && !enabled) {
+        view.remove(); // Remove from DOM entirely
+      }
+    });
+    
+    // Hide nav buttons for disabled features
+    document.querySelectorAll('.nav-button[data-view]').forEach(btn => {
+      const view = btn.dataset.view;
+      const featureMap = {
+        'character': FEATURES.characterCreator,
+        '2048': FEATURES.game2048,
+        'match3': FEATURES.gameMatch3,
+        'city': FEATURES.gameCity,
+        'shop': FEATURES.shop,
+      };
+      if (featureMap[view] === false) {
+        btn.remove();
+      }
+    });
+    
+    // Hide dev tools if not enabled
+    if (!FEATURES.devTools) {
+      const devToolsRow = document.querySelector('.settings-row-column');
+      if (devToolsRow) {
+        devToolsRow.style.display = 'none';
+      }
+    }
+    
+    console.log('Feature flags applied:', FEATURES);
+  }
 })();

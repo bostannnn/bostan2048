@@ -582,6 +582,37 @@ body[data-view="2048"] #view-2048.view {
   flex-wrap: wrap;
 }
 
+/* Feature Flags */
+.feature-flags-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.feature-flag-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--material-thin);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+}
+
+.feature-flag-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.feature-flag-label.overridden {
+  color: var(--ui-accent);
+}
+
+.feature-flag-item .ui-toggle {
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .settings-button {
     bottom: calc(88px + env(safe-area-inset-bottom));
