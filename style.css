@@ -69,14 +69,9 @@ body[data-view="2048"] #view-2048.view {
   height: 100%;
 }
 
-/* Floating Navbar (Elegant Glass Pill) - RESTORED */
-/* Hide navbar when in city view */
-body[data-view="city"] .bottom-nav {
-  display: none !important;
-}
-
+/* Floating Navbar - Hidden for now */
 .bottom-nav {
-  display: none;
+  display: none !important;
   position: fixed;
   bottom: 24px;
   bottom: calc(24px + env(safe-area-inset-bottom));
@@ -639,4 +634,36 @@ body[data-view="city"] .bottom-nav {
   .view {
     padding: 12px 10px;
   }
+}
+
+/* Character View */
+#view-character {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+}
+
+#view-character .view-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    flex-direction: column;
+    align-items: center;
+}
+
+.character-preview-container {
+    width: 200px;
+    height: 300px;
+    background: var(--glass-bg);
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--glass-border);
+}
+
+.character-actions {
+    display: flex;
+    gap: 1rem;
 }

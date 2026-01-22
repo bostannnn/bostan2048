@@ -8,39 +8,13 @@ import { EffectManager } from './components/EffectManager.js';
 
 const ECONOMY_GAME_ID = "2048";
 const GAME_OVER_QUOTES = [ /* Keep your existing quotes if you want, omitted for brevity */ ];
-const LEVEL_UNLOCK_SCORE = 2048;
-const LEVELS = [
-    {
-        id: 1,
-        name: "Level 1",
-        title: "City Escape",
-        assetPath: "assets/levels/level-1",
-        previewImage: "assets/levels/level-1/2048.jpg"
-    },
-    {
-        id: 2,
-        name: "Level 2",
-        title: "Forest Trail",
-        assetPath: "assets/levels/level-2",
-        previewImage: "assets/levels/level-2/2048.jpg"
-    },
-    {
-        id: 3,
-        name: "Level 3",
-        title: "Desert Voyage",
-        assetPath: "assets/levels/level-3",
-        previewImage: "assets/levels/level-3/2048.jpg"
-    }
-];
-const LEVEL_IDS = LEVELS.map((level) => level.id);
-const DEFAULT_LEVEL = LEVELS[0].id;
+const ASSET_PATH = "assets/levels/level-1";
 
 export class Photo2048 extends GameInterface {
     constructor() {
         super("2048");
         this.gameInstance = null;
-        this.levelLoadToken = 0;
-        this.loadedLevelId = null;
+        this.assetsLoaded = false;
         this.customImages = {};
         this.customImageAvailability = {};
         this.currencyUnsubscribe = null;
@@ -48,7 +22,6 @@ export class Photo2048 extends GameInterface {
         this.actuator = null;
         this.confirmHandler = null;
         this.restartPending = false;
-        this.currentLevel = DEFAULT_LEVEL;
         this.storageManager = null;
         
         // Resolve base URL for assets (handles GitHub Pages subpath deployment)
@@ -76,7 +49,6 @@ export class Photo2048 extends GameInterface {
         super.mount(container);
         this.container.innerHTML = this.getTemplate();
         this.setupUI();
-        this.updateLevelBadge();
 
         // 1. Initialize the Renderer
         this.initBoardRenderer();
@@ -91,21 +63,16 @@ export class Photo2048 extends GameInterface {
         window.customImageAvailability = this.customImageAvailability;
         this.bindCurrencyDisplay();
 
-        this.applyLevelAssets(this.currentLevel);
+        this.loadAssets();
 
         // 3. Now it is safe to start the game
         this.start();
     }
 
-    applyLevelAssets(levelId) {
-        const config = this.getLevelConfig(levelId);
-        const assetPath = config?.assetPath || this.getLevelConfig(DEFAULT_LEVEL)?.assetPath;
-        if (!assetPath) return;
-        if (this.loadedLevelId === levelId) return;
-
-        this.loadedLevelId = levelId;
-        this.levelLoadToken += 1;
-        const token = this.levelLoadToken;
+    loadAssets() {
+        if (this.assetsLoaded) return;
+        this.assetsLoaded = true;
+        
         this.customImages = {};
         this.customImageAvailability = {};
         window.customImageAvailability = this.customImageAvailability;
@@ -114,11 +81,10 @@ export class Photo2048 extends GameInterface {
         const values = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         values.forEach(val => {
             // Resolve against base URL for production deployments (e.g., GitHub Pages)
-            this.customImages[val] = this.resolveAsset(`${assetPath}/${val}.jpg`);
+            this.customImages[val] = this.resolveAsset(`${ASSET_PATH}/${val}.jpg`);
             this.customImageAvailability[val] = false;
             const img = new Image();
             img.onload = () => {
-                if (token !== this.levelLoadToken) return;
                 this.customImageAvailability[val] = true;
                 if (this.boardRenderer) {
                     this.boardRenderer.setTileTexture(val, img);
@@ -128,7 +94,6 @@ export class Photo2048 extends GameInterface {
                 }
             };
             img.onerror = () => {
-                if (token !== this.levelLoadToken) return;
                 this.customImageAvailability[val] = false;
             };
             img.src = this.customImages[val];
@@ -157,8 +122,8 @@ export class Photo2048 extends GameInterface {
         }
 
         this.storageManager = new LocalStorageManager({
-            namespace: this.getLevelNamespace(this.currentLevel),
-            migrateLegacy: this.currentLevel === DEFAULT_LEVEL
+            namespace: "photo2048",
+            migrateLegacy: true
         });
 
         this.gameInstance = new GameManager(4, KeyboardInputManager, actuator, this.storageManager, {
@@ -185,7 +150,6 @@ export class Photo2048 extends GameInterface {
     }
 
     resume() {
-        this.updateLevelBadge();
         if (window.effectManager && window.effectManager.resize) {
             window.effectManager.resize();
         }
@@ -211,7 +175,7 @@ export class Photo2048 extends GameInterface {
             this.boardRenderer.destroy();
             this.boardRenderer = null;
         }
-        this.loadedLevelId = null;
+        this.assetsLoaded = false;
         
         // Critical: cleanup input listeners
         if (this.gameInstance && this.gameInstance.destroy) {
@@ -234,8 +198,7 @@ export class Photo2048 extends GameInterface {
         });
     }
 
-    restartLevel() {
-        this.applyLevelAssets(this.currentLevel);
+    restart() {
         if (this.gameInstance) {
             this.gameInstance.reset();
         }
@@ -249,13 +212,13 @@ export class Photo2048 extends GameInterface {
         const shouldConfirm = options.confirm !== false;
         if (!shouldConfirm) {
             this.restartPending = false;
-            this.restartLevel();
+            this.restart();
             return;
         }
         if (this.restartPending) return;
         const performRestart = () => {
             this.restartPending = false;
-            this.restartLevel();
+            this.restart();
         };
         const cancelRestart = () => {
             this.restartPending = false;
@@ -275,92 +238,6 @@ export class Photo2048 extends GameInterface {
         }
 
         performRestart();
-    }
-
-    getCurrentLevel() {
-        return this.currentLevel;
-    }
-
-    getLevelConfig(levelId) {
-        return LEVELS.find((level) => level.id === levelId) || LEVELS[0];
-    }
-
-    getLevelName(levelId) {
-        return this.getLevelConfig(levelId)?.name || `Level ${levelId}`;
-    }
-
-    getLevelTitle(levelId) {
-        const config = this.getLevelConfig(levelId);
-        if (!config) return `Level ${levelId}`;
-        return config.title ? `${config.name}: ${config.title}` : config.name;
-    }
-
-    getLevelNamespace(levelId) {
-        return `photo2048:level-${levelId}`;
-    }
-
-    isLevelUnlocked(levelId) {
-        if (levelId === DEFAULT_LEVEL) return true;
-        const previousBest = this.getBestScore(levelId - 1);
-        return previousBest >= LEVEL_UNLOCK_SCORE;
-    }
-
-    getBestScore(levelId) {
-        const storage = new LocalStorageManager({
-            namespace: this.getLevelNamespace(levelId),
-            migrateLegacy: levelId === DEFAULT_LEVEL
-        });
-        return Number(storage.getBestScore()) || 0;
-    }
-
-    getLevelSummary() {
-        return LEVEL_IDS.map((levelId) => {
-            const bestScore = this.getBestScore(levelId);
-            const unlocked = this.isLevelUnlocked(levelId);
-            const isCurrent = levelId === this.currentLevel;
-            const status = !unlocked ? "locked" : isCurrent ? "current" : "unlocked";
-            const config = this.getLevelConfig(levelId);
-            return {
-                id: levelId,
-                name: this.getLevelName(levelId),
-                title: config?.title || "",
-                displayTitle: this.getLevelTitle(levelId),
-                assetPath: config?.assetPath || "",
-                previewImage: this.resolveAsset(config?.previewImage || ""),
-                bestScore,
-                unlocked,
-                isCurrent,
-                status
-            };
-        });
-    }
-
-    getLevelSelectMeta() {
-        return {
-            subtitle: "Reach 2048 to unlock the next level.",
-            comingSoon: {
-                label: "Level 4",
-                title: "Coming Soon",
-                meta: "New levels coming soon."
-            }
-        };
-    }
-
-    setLevel(levelId) {
-        if (!LEVEL_IDS.includes(levelId)) return false;
-        if (!this.isLevelUnlocked(levelId)) return false;
-        if (levelId === this.currentLevel) return false;
-        this.currentLevel = levelId;
-        this.applyLevelAssets(levelId);
-        this.updateLevelBadge();
-        this.start();
-        return true;
-    }
-
-    updateLevelBadge() {
-        const badge = this.container?.querySelector("#level-badge");
-        if (!badge) return;
-        badge.textContent = this.getLevelName(this.currentLevel);
     }
 
     /**
@@ -391,11 +268,7 @@ export class Photo2048 extends GameInterface {
         <div class="container">
             <header class="glass-panel">
                 <div class="header-top-row">
-                    <button id="back-to-city" class="ui-button secondary small back-btn" aria-label="Back to City">← City</button>
-                    <div class="title-stack">
-                        <h1>2048</h1>
-                        <span id="level-badge" class="glass-pill level-badge">Level 1</span>
-                    </div>
+                    <h1>2048</h1>
                     <button class="ui-button secondary small icon-only settings-inline" data-settings-trigger="true" aria-label="Settings" title="Settings">⚙️</button>
                 </div>
                 <div class="scores">
@@ -416,8 +289,6 @@ export class Photo2048 extends GameInterface {
                 <div class="header-buttons">
                     <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>
                     <button id="undo-button" class="ui-button secondary undo-button" disabled>↩️ Undo</button>
-                    <span class="header-spacer"></span>
-                    <button id="level-select-button" class="ui-button secondary">Levels</button>
                 </div>
             </header>
 
@@ -438,17 +309,6 @@ export class Photo2048 extends GameInterface {
     }
 
     setupUI() {
-        // Back to city button
-        const backBtn = this.container.querySelector("#back-to-city");
-        if (backBtn) {
-            backBtn.addEventListener("click", (event) => {
-                event.preventDefault();
-                if (window.showView) {
-                    window.showView("city");
-                }
-            });
-        }
-
         const showButton = this.container.querySelector("#show-leaderboard");
 
         if (showButton) {

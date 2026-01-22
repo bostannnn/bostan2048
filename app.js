@@ -32,35 +32,30 @@ import '/core.js';
 
   let activeGameId = "2048";
 
-  function getActiveLevel(gameId = activeGameId) {
-    return games[gameId]?.getCurrentLevel?.() || 1;
-  }
-
-  function getLeaderboardConfig(gameId, levelId) {
+  function getLeaderboardConfig(gameId) {
     if (gameId === "2048") {
       return {
-        gameId: `2048-level-${levelId}`,
-        storageKey: `photo2048HighScores:level-${levelId}`,
+        gameId: "2048",
+        storageKey: "photo2048HighScores",
       };
     }
     if (gameId === "match3") {
       return {
-        gameId: `match3-level-${levelId}`,
-        storageKey: `match3HighScores:level-${levelId}`,
+        gameId: "match3",
+        storageKey: "match3HighScores",
       };
     }
     return {
-      gameId: `${gameId}-level-${levelId}`,
-      storageKey: `${gameId}HighScores:level-${levelId}`,
+      gameId: gameId,
+      storageKey: `${gameId}HighScores`,
     };
   }
 
-  function getLeaderboardManager(gameId, levelId) {
-    const key = `${gameId}:${levelId}`;
-    if (!leaderboardManagers.has(key)) {
-      const config = getLeaderboardConfig(gameId, levelId);
+  function getLeaderboardManager(gameId) {
+    if (!leaderboardManagers.has(gameId)) {
+      const config = getLeaderboardConfig(gameId);
       leaderboardManagers.set(
-        key,
+        gameId,
         new LeaderboardManager({
           gameId: config.gameId,
           storageKey: config.storageKey,
@@ -69,7 +64,7 @@ import '/core.js';
         })
       );
     }
-    return leaderboardManagers.get(key);
+    return leaderboardManagers.get(gameId);
   }
 
   function showView(viewId) {
@@ -121,7 +116,7 @@ import '/core.js';
   }
 
   function setupViews() {
-    ["2048", "match3", "city", "shop"].forEach((id) => {
+    ["character", "2048", "match3", "city", "shop"].forEach((id) => {
       const el = document.getElementById(`view-${id}`);
       if (el) {
         views[id] = el;
@@ -271,7 +266,6 @@ import '/core.js';
   const dateFormatter = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
   let openLeaderboardRef = null;
   let closeLeaderboardRef = null;
-  let openLevelSelectRef = null;
 
   function setupSettingsOverlay() {
     const overlay = document.getElementById("settings-overlay");
@@ -345,9 +339,7 @@ import '/core.js';
     const summaryEl = document.getElementById("leaderboard-summary");
     const status = document.getElementById("leaderboard-status");
     const tryAgainBtn = document.getElementById("leaderboard-try-again");
-    const levelsBtn = document.getElementById("leaderboard-levels");
     let currentMode = "default";
-    let leaderboardLevel = null;
     let leaderboardGameId = null;
 
     if (!overlay) return;
@@ -386,8 +378,7 @@ import '/core.js';
       if (!list) return;
       const maxRows = 10;
       const activeGame = leaderboardGameId || activeGameId;
-      const activeLevel = leaderboardLevel || getActiveLevel(activeGame);
-      const manager = getLeaderboardManager(activeGame, activeLevel);
+      const manager = getLeaderboardManager(activeGame);
       const { local, remote } = await manager.fetchScores(maxRows);
       const hasFirebase = !!(window.FirebaseManager && window.FirebaseManager.enabled);
       const hasRemote = Array.isArray(remote) && remote.length > 0;
@@ -431,7 +422,6 @@ import '/core.js';
       currentMode = options.mode || "default";
       overlay.classList.remove("hidden");
       leaderboardGameId = options.gameId || activeGameId;
-      leaderboardLevel = options.level || getActiveLevel(leaderboardGameId);
       if (hint) {
         hint.textContent = "";
         hint.classList.add("hidden");
@@ -449,14 +439,13 @@ import '/core.js';
       if (options.score !== undefined) {
         pendingScore = {
           gameId: leaderboardGameId,
-          level: leaderboardLevel,
           score: Number(options.score) || 0,
           turns: Number(options.turns) || 0,
           undos: Number(options.undos) || 0,
           date: Date.now()
         };
       }
-      const manager = getLeaderboardManager(leaderboardGameId, leaderboardLevel);
+      const manager = getLeaderboardManager(leaderboardGameId);
       const shouldShowEntry = options.showEntryForm ?? (pendingScore && manager.isHighScore(pendingScore.score));
       if (shouldShowEntry && pendingLabel && pendingScore) {
         pendingLabel.textContent = pendingScore.score.toLocaleString();
@@ -474,9 +463,6 @@ import '/core.js';
       if (tryAgainBtn) {
         tryAgainBtn.classList.toggle("hidden", !(currentMode === "gameover" || currentMode === "win"));
       }
-      if (levelsBtn) {
-        levelsBtn.classList.toggle("hidden", !(currentMode === "gameover" || currentMode === "win"));
-      }
       await renderLeaderboard();
     }
 
@@ -493,12 +479,10 @@ import '/core.js';
 
       try {
         const scoreGameId = pendingScore.gameId || activeGameId;
-        const scoreLevel = pendingScore.level || getActiveLevel(scoreGameId);
-        const manager = getLeaderboardManager(scoreGameId, scoreLevel);
+        const manager = getLeaderboardManager(scoreGameId);
         const result = await manager.submitScore(name, pendingScore.score, {
           turns: pendingScore.turns || 0,
           undos: pendingScore.undos || 0,
-          level: scoreLevel,
         });
         pendingScore = null;
         toggleEntry(false);
@@ -521,7 +505,6 @@ import '/core.js';
       overlay.classList.add("hidden");
       setStatus("", null);
       currentMode = "default";
-      leaderboardLevel = null;
       leaderboardGameId = null;
       if (summaryEl) {
         summaryEl.textContent = "";
@@ -537,12 +520,6 @@ import '/core.js';
 
     if (tryAgainBtn) {
       tryAgainBtn.addEventListener("click", restartGame);
-    }
-
-    if (levelsBtn) {
-      levelsBtn.addEventListener("click", () => {
-        openLevelSelectRef?.();
-      });
     }
 
     if (saveBtn) {
@@ -566,131 +543,6 @@ import '/core.js';
     openLeaderboardRef = openLeaderboard;
   }
 
-  function setupLevelSelectOverlay() {
-    const overlay = document.getElementById("level-select");
-    const list = document.getElementById("level-list");
-    const closeBtn = document.getElementById("close-level-select");
-    const subtitleEl = document.getElementById("level-select-subtitle");
-    if (!overlay || !list) return null;
-
-    const close = () => overlay.classList.add("hidden");
-
-    const renderLevels = () => {
-      const game = games[activeGameId] || games["2048"];
-      if (!game || !game.getLevelSummary) return;
-      const meta = game.getLevelSelectMeta ? game.getLevelSelectMeta() : null;
-      if (subtitleEl) {
-        subtitleEl.textContent = meta?.subtitle || "Select a level.";
-      }
-      const levels = game.getLevelSummary();
-      list.innerHTML = "";
-
-      levels.forEach((level) => {
-        const card = document.createElement("div");
-        card.className = `level-card ${level.status}`;
-        card.dataset.level = String(level.id);
-        card.dataset.locked = level.unlocked ? "false" : "true";
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", level.unlocked ? "0" : "-1");
-        card.setAttribute("aria-disabled", level.unlocked ? "false" : "true");
-
-        const bestScore = Number(level.bestScore || 0).toLocaleString();
-        const statusLabel = level.status === "current"
-          ? "Current"
-          : level.status === "locked"
-            ? "Locked"
-            : "Unlocked";
-        const previewImage = level.previewImage
-          ? `<img src="${level.previewImage}" alt="${level.displayTitle} preview" loading="lazy">`
-          : "";
-        const actionLabel = level.unlocked ? "Start" : "Locked";
-        const actionTone = level.unlocked ? "gold" : "secondary";
-
-        card.innerHTML = `
-          <div class="level-preview">${previewImage}</div>
-          <div class="level-card-body">
-            <div class="level-card-header">
-              <div class="level-title">${level.displayTitle}</div>
-              <div class="level-status ${level.status}">${statusLabel}</div>
-            </div>
-            <div class="level-meta">Best: ${bestScore}</div>
-            <div class="level-card-actions">
-              <button type="button" class="ui-button small ${actionTone}">${actionLabel}</button>
-            </div>
-          </div>
-        `;
-        list.appendChild(card);
-      });
-
-      if (meta?.comingSoon) {
-        const comingSoon = document.createElement("div");
-        comingSoon.className = "level-card level-card-soon";
-        comingSoon.innerHTML = `
-          <div class="level-preview level-preview-soon">
-            <span>${meta.comingSoon.label}</span>
-          </div>
-          <div class="level-card-body">
-            <div class="level-card-header">
-              <div class="level-title">${meta.comingSoon.title}</div>
-              <div class="level-status soon">Soon</div>
-            </div>
-            <div class="level-meta">${meta.comingSoon.meta}</div>
-            <div class="level-card-actions">
-              <button type="button" class="ui-button small secondary">Locked</button>
-            </div>
-          </div>
-        `;
-        list.appendChild(comingSoon);
-      }
-    };
-
-    const open = () => {
-      renderLevels();
-      overlay.classList.remove("hidden");
-    };
-
-    const handleLevelActivate = (target) => {
-      if (!target || target.dataset.locked === "true") return;
-      const levelId = Number(target.dataset.level);
-      const game = games[activeGameId] || games["2048"];
-      const changed = game?.setLevel?.(levelId);
-      if (changed || levelId === game?.getCurrentLevel?.()) {
-        close();
-        closeLeaderboardRef?.();
-      }
-    };
-
-    list.addEventListener("click", (event) => {
-      const target = event.target.closest("[data-level]");
-      handleLevelActivate(target);
-    });
-
-    list.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      const target = event.target.closest("[data-level]");
-      if (!target) return;
-      event.preventDefault();
-      handleLevelActivate(target);
-    });
-
-    if (closeBtn) closeBtn.addEventListener("click", close);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) close();
-    });
-
-    document.addEventListener("click", (event) => {
-      const trigger = event.target.closest && event.target.closest("#level-select-button");
-      if (trigger) {
-        event.preventDefault();
-        open();
-      }
-    });
-
-    openLevelSelectRef = open;
-    window.openLevelSelectRef = open; // Expose for city game
-    return open;
-  }
-
   function setupGameOverListener() {
     ["2048", "match3"].forEach((gameId) => {
       const view = document.getElementById(`view-${gameId}`);
@@ -701,15 +553,33 @@ import '/core.js';
         const turns = Number(event?.detail?.stats?.turns) || 0;
         const undos = Number(event?.detail?.stats?.undos) || 0;
         const mode = event?.detail?.mode || "gameover";
-        const level = event?.detail?.level || getActiveLevel(gameId);
         const summary = event?.detail?.summary || null;
-        pendingScore = { gameId, level, score, turns, undos, date: Date.now() };
+        pendingScore = { gameId, score, turns, undos, date: Date.now() };
         const qualifies = true;
         if (openLeaderboardRef) {
-          openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode, level, gameId, summary });
+          openLeaderboardRef({ showEntryForm: qualifies, score, turns, undos, mode, gameId, summary });
         }
       });
     });
+  }
+
+  function setupCharacterView() {
+    const editBtn = document.getElementById("edit-character-btn");
+    const wardrobeBtn = document.getElementById("open-wardrobe-btn");
+    
+    if (editBtn) {
+      editBtn.addEventListener("click", async () => {
+        const { showCharacterCreator } = await import('./src/components/CharacterCreator.js');
+        showCharacterCreator({ container: document.body, editMode: true });
+      });
+    }
+    
+    if (wardrobeBtn) {
+      wardrobeBtn.addEventListener("click", async () => {
+        const { showWardrobe } = await import('./src/components/Wardrobe.js');
+        showWardrobe({ container: document.body });
+      });
+    }
   }
 
   function setupConfirmOverlay() {
@@ -761,13 +631,13 @@ import '/core.js';
       window.FirebaseManager.configure(window.firebaseConfig);
     }
     setupLeaderboard();
-    setupLevelSelectOverlay();
     setupSettingsOverlay();
     setupViews();
     const openConfirm = setupConfirmOverlay();
     setupGameOverListener();
     setupNav();
     setupPicrossStub();
+    setupCharacterView();
 
     if (openConfirm) {
       Object.values(games).forEach((game) => {
@@ -795,8 +665,8 @@ import '/core.js';
         await showCharacterCreator({ container: document.body });
       }
       
-      // Always start with city view (it's the hub)
-      showView("city");
+      // Start with 2048 (default game)
+      showView("2048");
     }
     
     initializeApp();
