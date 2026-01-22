@@ -50,6 +50,26 @@ export class Photo2048 extends GameInterface {
         this.restartPending = false;
         this.currentLevel = DEFAULT_LEVEL;
         this.storageManager = null;
+        
+        // Resolve base URL for assets (handles GitHub Pages subpath deployment)
+        const envBase = import.meta.env?.BASE_URL || '/';
+        this.assetBase = envBase.endsWith('/') ? envBase : `${envBase}/`;
+    }
+
+    /**
+     * Resolves an asset path against the base URL for production deployments.
+     * @param {string} path - Relative asset path (e.g., "assets/levels/level-1/2.jpg")
+     * @returns {string} - Full URL path
+     */
+    resolveAsset(path) {
+        if (!path) return path;
+        // Already absolute or data URL
+        if (/^(?:[a-z]+:)?\/\//i.test(path) || path.startsWith('data:') || path.startsWith('blob:')) {
+            return path;
+        }
+        // Remove leading slash if present to avoid double slashes
+        const cleanPath = path.replace(/^\/+/, '');
+        return `${this.assetBase}${cleanPath}`;
     }
 
     async mount(container) {
@@ -93,7 +113,8 @@ export class Photo2048 extends GameInterface {
         // Only preload assets we ship
         const values = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768];
         values.forEach(val => {
-            this.customImages[val] = `${assetPath}/${val}.jpg`;
+            // Resolve against base URL for production deployments (e.g., GitHub Pages)
+            this.customImages[val] = this.resolveAsset(`${assetPath}/${val}.jpg`);
             this.customImageAvailability[val] = false;
             const img = new Image();
             img.onload = () => {
@@ -305,7 +326,7 @@ export class Photo2048 extends GameInterface {
                 title: config?.title || "",
                 displayTitle: this.getLevelTitle(levelId),
                 assetPath: config?.assetPath || "",
-                previewImage: config?.previewImage || "",
+                previewImage: this.resolveAsset(config?.previewImage || ""),
                 bestScore,
                 unlocked,
                 isCurrent,
@@ -340,6 +361,29 @@ export class Photo2048 extends GameInterface {
         const badge = this.container?.querySelector("#level-badge");
         if (!badge) return;
         badge.textContent = this.getLevelName(this.currentLevel);
+    }
+
+    /**
+     * Dev tool: Force the game into a game-over state.
+     */
+    forceGameOver() {
+        if (!this.gameInstance) return;
+        this.gameInstance.over = true;
+        this.gameInstance.actuate();
+    }
+
+    /**
+     * Dev tool: Add a 2048 tile to a random empty cell.
+     */
+    async add2048Tile() {
+        if (!this.gameInstance || !this.gameInstance.grid) return;
+        const { Tile } = await import('./components/Tile.js');
+        const cell = this.gameInstance.grid.randomAvailableCell();
+        if (!cell) return;
+        const tile = new Tile(cell, 2048);
+        this.gameInstance.grid.insertTile(tile);
+        this.gameInstance.won = true;
+        this.gameInstance.actuate();
     }
 
     getTemplate() {

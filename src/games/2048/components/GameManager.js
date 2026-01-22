@@ -48,12 +48,12 @@ export class GameManager {
   }
 
   keepPlaying() {
-    this.keepPlaying = true;
+    this.isKeepPlaying = true;
     this.actuator.continueGame(); 
   }
 
   isGameTerminated() {
-    return this.over || (this.won && !this.keepPlaying);
+    return this.over || (this.won && !this.isKeepPlaying);
   }
 
   setup() {
@@ -70,7 +70,7 @@ export class GameManager {
       this.score = previousState.score;
       this.over = previousState.over;
       this.won = previousState.won;
-      this.keepPlaying = previousState.keepPlaying;
+      this.isKeepPlaying = previousState.keepPlaying;
       this.resultRecorded = !!previousState.resultRecorded;
       this.undoState = storedUndoState;
       this.turnCount = previousState.turnCount || 0;
@@ -81,7 +81,7 @@ export class GameManager {
       this.score = 0;
       this.over = false;
       this.won = false;
-      this.keepPlaying = false;
+      this.isKeepPlaying = false;
       this.resultRecorded = false;
       this.undoState = null;
       this.turnCount = 0;
@@ -154,7 +154,7 @@ export class GameManager {
       score: this.score,
       over: this.over,
       won: this.won,
-      keepPlaying: this.keepPlaying,
+      keepPlaying: this.isKeepPlaying,
       resultRecorded: this.resultRecorded,
       turnCount: this.turnCount,
       undoCount: this.undoCount,
@@ -182,7 +182,7 @@ export class GameManager {
     this.score = state.score;
     this.over = state.over;
     this.won = state.won;
-    this.keepPlaying = state.keepPlaying;
+    this.isKeepPlaying = state.keepPlaying;
     this.resultRecorded = !!state.resultRecorded;
     this.turnCount = state.turnCount || 0;
     this.undoCount = state.undoCount || 0;

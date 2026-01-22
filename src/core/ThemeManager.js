@@ -2,6 +2,7 @@ export class ThemeManager {
     constructor() {
         this.toggle = document.getElementById("theme-toggle");
         this.body = document.body;
+        this.handleToggleChange = this.handleToggleChange.bind(this);
         this.init();
     }
 
@@ -16,13 +17,15 @@ export class ThemeManager {
             this.enableDarkMode();
         }
 
-        this.toggle.addEventListener("change", (e) => {
-            if (e.target.checked) {
-                this.enableDarkMode();
-            } else {
-                this.disableDarkMode();
-            }
-        });
+        this.toggle.addEventListener("change", this.handleToggleChange);
+    }
+
+    handleToggleChange(e) {
+        if (e.target.checked) {
+            this.enableDarkMode();
+        } else {
+            this.disableDarkMode();
+        }
     }
 
     enableDarkMode() {
@@ -43,7 +46,15 @@ export class ThemeManager {
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute("content", color);
     }
+
+    destroy() {
+        if (this.toggle) {
+            this.toggle.removeEventListener("change", this.handleToggleChange);
+        }
+        this.toggle = null;
+        this.body = null;
+    }
 }
 
-// Auto-init
-new ThemeManager();
+// Auto-init and expose for potential cleanup
+window.themeManager = new ThemeManager();

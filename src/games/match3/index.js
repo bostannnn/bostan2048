@@ -72,6 +72,24 @@ export class Match3Game extends GameInterface {
     this.totalShuffles = 0;
     this.hintTimer = null;
     this.idleHintDelay = 7000;
+
+    // Resolve base URL for assets (handles GitHub Pages subpath deployment)
+    const envBase = import.meta.env?.BASE_URL || '/';
+    this.assetBase = envBase.endsWith('/') ? envBase : `${envBase}/`;
+  }
+
+  /**
+   * Resolves an asset path against the base URL for production deployments.
+   * @param {string} path - Relative asset path
+   * @returns {string} - Full URL path
+   */
+  resolveAsset(path) {
+    if (!path) return path;
+    if (/^(?:[a-z]+:)?\/\//i.test(path) || path.startsWith('data:') || path.startsWith('blob:')) {
+      return path;
+    }
+    const cleanPath = path.replace(/^\/+/, '');
+    return `${this.assetBase}${cleanPath}`;
   }
 
   async mount(container) {
@@ -95,12 +113,18 @@ export class Match3Game extends GameInterface {
 
   initRenderer() {
     if (this.renderer || !this.boardEl) return;
+    // Resolve all asset paths for production deployments (e.g., GitHub Pages)
+    const resolvedGems = MATCH3_ASSETS.gems.map((p) => this.resolveAsset(p));
+    const resolvedSpecials = {};
+    Object.entries(MATCH3_ASSETS.specials).forEach(([key, path]) => {
+      resolvedSpecials[key] = this.resolveAsset(path);
+    });
     this.renderer = new Match3Renderer(this.boardEl, {
       rows: 8,
       cols: 8,
-      gemPaths: MATCH3_ASSETS.gems,
-      specialPaths: MATCH3_ASSETS.specials,
-      backgroundPath: MATCH3_ASSETS.background,
+      gemPaths: resolvedGems,
+      specialPaths: resolvedSpecials,
+      backgroundPath: this.resolveAsset(MATCH3_ASSETS.background),
     });
   }
 
@@ -540,7 +564,7 @@ export class Match3Game extends GameInterface {
         name: this.getLevelName(levelId),
         title: config?.title || "",
         displayTitle: this.getLevelTitle(levelId),
-        previewImage: config?.previewImage || "",
+        previewImage: this.resolveAsset(config?.previewImage || ""),
         bestScore,
         unlocked,
         isCurrent,
