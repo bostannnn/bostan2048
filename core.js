@@ -3,7 +3,7 @@
 
   const EconomyConfig = {
     games: {
-      "2048": { scorePerCoin: 10 },
+      "2048": { scorePerCoin: 10000 },
       "match3": { scorePerCoin: 200 },
       "picross": { completionCoins: 5 }
     }
