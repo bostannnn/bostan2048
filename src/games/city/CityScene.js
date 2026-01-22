@@ -1,4 +1,6 @@
 import { Application, Container, Graphics, Sprite, Texture } from "pixi.js";
+import { CharacterSprite } from "../../core/CharacterSprite.js";
+import { characterManager } from "../../core/CharacterManager.js";
 
 export class CityScene {
     constructor(options) {
@@ -63,25 +65,48 @@ export class CityScene {
       this.hoverCell = null;
       this.ghostSprite = null;
 
+      // Character
+      this.characterSprite = null;
+      this.characterContainer = null;
+
+      // Kenney Isometric City assets (CC0 license)
+      // Note: This is primarily a ROAD-BUILDING kit with trees on grass patches
+      const kenneyPath = "assets/kenney_isometric-city/PNG";
+      const kenneyDetails = "assets/kenney_isometric-city/Details";
+      
       this.assets = {
         ground: {
+          // Original grass variants
           grass: "assets/city/grass.png",
           grass_01: "assets/city/grass_01.png",
           grass_02: "assets/city/grass_02.png",
           grass_03: "assets/city/grass_03.png",
+          // Roads
           road: "assets/city/road.png",
           road_center: "assets/city/road_center.png",
           road_corner: "assets/city/road_corner.png",
+          // Water
           water: "assets/city/water.png",
           plaza: "assets/city/plaza.png"
         },
         building: {
+          // Original custom buildings (these are the actual buildings!)
           house: "assets/city/house.png",
           shop: "assets/city/shop_small.png",
           fountain: "assets/city/fountain.png",
           building_small: "assets/city/building_small.png",
           building_medium: "assets/city/building_medium.png",
-          building_large: "assets/city/building_large.png"
+          building_large: "assets/city/building_large.png",
+          // Kenney trees on grass patches (these look nice!)
+          kenney_tree_single: `${kenneyPath}/cityTiles_067.png`,
+          kenney_tree_grass: `${kenneyPath}/cityTiles_075.png`,
+          kenney_tree_park: `${kenneyPath}/cityTiles_083.png`,
+          kenney_trees_double: `${kenneyPath}/cityTiles_036.png`,
+          kenney_trees_road: `${kenneyPath}/cityTiles_044.png`,
+          // Kenney detail decorations
+          kenney_tree_detail: `${kenneyDetails}/cityDetails_010.png`,
+          kenney_bench: `${kenneyDetails}/cityDetails_008.png`,
+          kenney_lamppost: `${kenneyDetails}/cityDetails_000.png`
         }
       };
 
@@ -95,7 +120,9 @@ export class CityScene {
           this.renderGridOverlay();
           this.renderPlacements();
           this.renderPalette();
-          this.setHint("Place mode: choose a building and tap the map.");
+          this.spawnCharacter();
+          this.setHint("Walk mode: tap to move your character.");
+          this.mode = "walk"; // Default to walk mode
           this.bindInput();
           this.centerMap();
         });
@@ -153,6 +180,12 @@ export class CityScene {
         this.mapContainer.addChild(this.groundContainer);
         this.mapContainer.addChild(this.gridContainer);
         this.mapContainer.addChild(this.objectContainer);
+        
+        // Character container (above objects for visibility)
+        this.characterContainer = new Container();
+        this.characterContainer.sortableChildren = true;
+        this.mapContainer.addChild(this.characterContainer);
+        
         this.app.stage.addChild(this.mapContainer);
       });
     }
@@ -218,10 +251,14 @@ export class CityScene {
     }
 
     setMode(mode) {
-      this.mode = mode === "erase" ? "erase" : "place";
-      if (this.mode === "erase") {
+      if (mode === "erase") {
+        this.mode = "erase";
         this.setHint("Erase mode: tap a building to remove it.");
+      } else if (mode === "walk") {
+        this.mode = "walk";
+        this.setHint("Walk mode: tap to move your character.");
       } else {
+        this.mode = "place";
         this.setHint("Place mode: choose a building and tap the map.");
       }
       this.clearGhost();
@@ -460,12 +497,22 @@ export class CityScene {
       if (this.tileMap.size > 0) return;
       const rng = this.getSeededRng();
       const candidates = this.collectRoadAdjacents();
+      // Starter city items - use original custom buildings + Kenney trees
       const starterItems = [
-        { id: "city_townhall", fallback: { w: 4, h: 3 } },
-        { id: "city_park_fountain", fallback: { w: 3, h: 3 } },
-        { id: "city_bakery", fallback: { w: 3, h: 2 } },
-        { id: "city_house_small", fallback: { w: 2, h: 2 } },
-        { id: "city_house_small", fallback: { w: 2, h: 2 } }
+        // Original custom buildings (these have actual building graphics!)
+        { id: "starter_building_large", fallback: { w: 1, h: 1 }, textureKey: "building_large" },
+        { id: "starter_building_medium", fallback: { w: 1, h: 1 }, textureKey: "building_medium" },
+        { id: "starter_house", fallback: { w: 1, h: 1 }, textureKey: "house" },
+        { id: "starter_house_2", fallback: { w: 1, h: 1 }, textureKey: "house" },
+        { id: "starter_shop", fallback: { w: 1, h: 1 }, textureKey: "shop" },
+        { id: "starter_building_small", fallback: { w: 1, h: 1 }, textureKey: "building_small" },
+        // Kenney trees (these are nice tree graphics on grass patches!)
+        { id: "starter_tree_1", fallback: { w: 1, h: 1 }, textureKey: "kenney_tree_single" },
+        { id: "starter_tree_2", fallback: { w: 1, h: 1 }, textureKey: "kenney_tree_grass" },
+        { id: "starter_tree_3", fallback: { w: 1, h: 1 }, textureKey: "kenney_tree_park" },
+        { id: "starter_trees_double", fallback: { w: 1, h: 1 }, textureKey: "kenney_trees_double" },
+        // Original fountain as a centerpiece
+        { id: "starter_fountain", fallback: { w: 1, h: 1 }, textureKey: "fountain" }
       ];
 
       starterItems.forEach((entry) => {
@@ -481,7 +528,9 @@ export class CityScene {
               y: pick.y,
               id: entry.id,
               rotation: 0,
-              footprint
+              footprint,
+              textureKey: entry.textureKey, // Direct texture key reference
+              sprite: entry.sprite
             });
             break;
           }
@@ -615,7 +664,9 @@ export class CityScene {
       const anchorY = tile.y + (rotated.h - 1) / 2;
       const screen = this.gridToScreen(anchorX, anchorY);
 
-      const texture = this.getBuildingTexture(item, rotated);
+      // Pass tile to getBuildingTexture so it can use textureKey from starter items
+      const itemWithTexture = { ...item, textureKey: tile.textureKey || item.textureKey };
+      const texture = this.getBuildingTexture(itemWithTexture, rotated);
       if (!texture) return null;
 
       const sprite = new Sprite(texture);
@@ -635,13 +686,48 @@ export class CityScene {
     }
 
     getBuildingTexture(item, footprint) {
+      // If item has a direct textureKey, use it (for starter items)
+      if (item && item.textureKey && this.textures.building[item.textureKey]) {
+        return this.textures.building[item.textureKey];
+      }
+      
+      // Map shop item IDs to texture keys
+      const idToTextureKey = {
+        // Shop items using original buildings
+        city_house_small: "house",
+        city_house: "house",
+        city_shop: "shop",
+        city_fountain: "fountain",
+        city_building_small: "building_small",
+        city_building_medium: "building_medium",
+        city_building_large: "building_large",
+        // Shop items using Kenney trees
+        city_tree: "kenney_tree_single",
+        city_tree_grass: "kenney_tree_grass",
+        city_tree_park: "kenney_tree_park",
+        city_trees_double: "kenney_trees_double",
+        city_bench: "kenney_bench",
+        city_lamppost: "kenney_lamppost"
+      };
+      
+      // Try to find texture by item id
+      if (item && item.id) {
+        const textureKey = idToTextureKey[item.id];
+        if (textureKey && this.textures.building[textureKey]) {
+          return this.textures.building[textureKey];
+        }
+      }
+      
+      // If item has a sprite path, try to find matching texture
       if (item && item.sprite) {
         const target = this.resolveAsset(item.sprite);
         const match = Object.entries(this.assets.building).find(([, url]) => this.resolveAsset(url) === target);
-        if (match) {
+        if (match && this.textures.building[match[0]]) {
           return this.textures.building[match[0]];
         }
       }
+      
+      // Fallback based on footprint size
       const area = footprint.w * footprint.h;
       if (area <= 4) return this.textures.building.building_small;
       if (area <= 8) return this.textures.building.building_medium;
@@ -700,6 +786,10 @@ export class CityScene {
     handleCellClick(x, y) {
       if (this.mode === "erase") {
         this.eraseAt(x, y);
+        return;
+      }
+      if (this.mode === "walk") {
+        this.moveCharacterTo(x, y);
         return;
       }
       this.placeAt(x, y);
@@ -1232,16 +1322,95 @@ export class CityScene {
     }
 
     regenerateStarterCity() {
+      // Clear saved layout from localStorage first
+      try {
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.getSeedKey());
+      } catch (e) {
+        // Ignore
+      }
+      
+      // Reset everything
       this.setSeed();
       this.tileMap.clear();
+      this.occupiedMap.clear();
       this.groundMap = [];
+      this.layout = { gridSize: this.gridSize, tiles: [] };
+      
+      // Rebuild
       this.buildGroundMap();
       this.renderGround();
       this.renderGridOverlay();
       this.seedStarterLayout();
       this.renderPlacements();
       this.saveLayout();
-      this.setHint("Starter city regenerated.");
+      this.setHint("City regenerated with new assets!");
+    }
+
+    /**
+     * Spawn the player character in the city
+     */
+    spawnCharacter() {
+      if (this.characterSprite || !this.characterContainer) return;
+      
+      // Only spawn if character has been created
+      if (!characterManager.hasCharacter()) return;
+      
+      this.characterSprite = new CharacterSprite(characterManager);
+      
+      // Get saved position or default to center
+      const char = characterManager.getCharacter();
+      const startX = char.position?.x ?? Math.floor(this.gridSize / 2);
+      const startY = char.position?.y ?? Math.floor(this.gridSize / 2);
+      
+      // Set position
+      this.characterSprite.setGridPosition(startX, startY, (x, y) => this.gridToScreen(x, y));
+      this.characterSprite.updateZIndex();
+      
+      this.characterContainer.addChild(this.characterSprite);
+    }
+
+    /**
+     * Move character to clicked cell (if not in place/erase mode)
+     */
+    moveCharacterTo(x, y) {
+      if (!this.characterSprite) return;
+      if (!this.isValidCell(x, y)) return;
+      
+      // Don't walk to occupied cells
+      if (this.occupiedMap.has(this.key(x, y))) return;
+      
+      this.characterSprite.walkTo(
+        x, y,
+        (gx, gy) => this.gridToScreen(gx, gy),
+        () => {
+          this.characterSprite?.updateZIndex();
+        }
+      );
+    }
+
+    /**
+     * Get character's current position
+     */
+    getCharacterPosition() {
+      if (!this.characterSprite) return null;
+      return this.characterSprite.getGridPosition();
+    }
+
+    /**
+     * Center camera on character
+     */
+    centerOnCharacter() {
+      if (!this.characterSprite || !this.root) return;
+      
+      const pos = this.characterSprite.getGridPosition();
+      const screen = this.gridToScreen(pos.x, pos.y);
+      const rect = this.root.getBoundingClientRect();
+      
+      this.pan.x = (rect.width / 2) - (screen.x * this.scale);
+      this.pan.y = (rect.height / 2) - (screen.y * this.scale);
+      this.applyPan();
+      this.hasPanned = true;
     }
 
     destroy() {
@@ -1252,6 +1421,10 @@ export class CityScene {
       if (this.handleResize) {
         window.removeEventListener("resize", this.handleResize);
       }
+      if (this.characterSprite) {
+        this.characterSprite.destroy();
+        this.characterSprite = null;
+      }
       if (this.app) {
         this.app.destroy(true);
         this.app = null;
@@ -1261,6 +1434,7 @@ export class CityScene {
       this.groundContainer = null;
       this.gridContainer = null;
       this.objectContainer = null;
+      this.characterContainer = null;
       this.groundSprites.clear();
     }
   }

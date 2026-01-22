@@ -67,8 +67,11 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-6d1fb45c'], (function (workbox) { 'use strict';
+define(['./workbox-243ec091'], (function (workbox) { 'use strict';
 
+  workbox.setCacheNameDetails({
+    prefix: "photo2048-prod"
+  });
   self.skipWaiting();
   workbox.clientsClaim();
 
@@ -82,11 +85,12 @@ define(['./workbox-6d1fb45c'], (function (workbox) { 'use strict';
     "revision": "81e33ac04116b36b3fd16d858e14e28b"
   }, {
     "url": "index.html",
-    "revision": "0.1nsnan67tp8"
+    "revision": "0.8ktonnmfd9c"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
-    allowlist: [/^\/$/]
+    allowlist: [/^\/$/],
+    denylist: [/^\/bostan2048\/dev\//]
   }));
 
 }));

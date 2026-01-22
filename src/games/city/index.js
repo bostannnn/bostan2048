@@ -1,5 +1,7 @@
 import { GameInterface } from "../../core/GameInterface.js";
 import { CityScene } from "./CityScene.js";
+import { showPlayMenu } from "../../components/PlayMenu.js";
+import { showWardrobe } from "../../components/Wardrobe.js";
 
 export class CityGame extends GameInterface {
   constructor() {
@@ -47,6 +49,12 @@ export class CityGame extends GameInterface {
     this.uiBound = true;
 
     const modeButtons = Array.from(this.container.querySelectorAll("[data-city-mode]"));
+    const editPanel = this.container.querySelector("#city-edit-panel");
+    const editBtn = this.container.querySelector("#city-edit-btn");
+    const playBtn = this.container.querySelector("#city-play-btn");
+    const editCloseBtn = this.container.querySelector("#city-edit-close");
+    const floatingActions = this.container.querySelector(".city-floating-actions");
+    
     const activateMode = (mode) => {
       modeButtons.forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.cityMode === mode);
@@ -59,6 +67,72 @@ export class CityGame extends GameInterface {
       button.addEventListener("click", handler);
       this.uiHandlers.push({ element: button, event: "click", handler });
     });
+
+    // Edit button - opens edit panel
+    if (editBtn && editPanel) {
+      const handler = () => {
+        editPanel.classList.remove("hidden");
+        if (floatingActions) floatingActions.classList.add("hidden");
+        activateMode("place");
+      };
+      editBtn.addEventListener("click", handler);
+      this.uiHandlers.push({ element: editBtn, event: "click", handler });
+    }
+
+    // Close edit panel
+    if (editCloseBtn && editPanel) {
+      const handler = () => {
+        editPanel.classList.add("hidden");
+        if (floatingActions) floatingActions.classList.remove("hidden");
+        activateMode("walk");
+      };
+      editCloseBtn.addEventListener("click", handler);
+      this.uiHandlers.push({ element: editCloseBtn, event: "click", handler });
+    }
+
+    // Play button - opens play menu with game selection
+    if (playBtn) {
+      const handler = () => {
+        showPlayMenu({
+          container: document.body,
+          onSelectGame: (gameId) => {
+            // Navigate to the selected game
+            if (window.showView) {
+              window.showView(gameId);
+            }
+          }
+        });
+      };
+      playBtn.addEventListener("click", handler);
+      this.uiHandlers.push({ element: playBtn, event: "click", handler });
+    }
+
+    // Shop button - opens shop view
+    const shopBtn = this.container.querySelector("#city-shop-btn");
+    if (shopBtn) {
+      const handler = () => {
+        if (window.showView) {
+          window.showView("shop");
+        }
+      };
+      shopBtn.addEventListener("click", handler);
+      this.uiHandlers.push({ element: shopBtn, event: "click", handler });
+    }
+
+    // Wardrobe button - opens wardrobe overlay
+    const wardrobeBtn = this.container.querySelector("#city-wardrobe-btn");
+    if (wardrobeBtn) {
+      const handler = () => {
+        showWardrobe({
+          container: document.body,
+          onClose: () => {
+            // Character sprite will update automatically via subscription
+          }
+        });
+      };
+      wardrobeBtn.addEventListener("click", handler);
+      this.uiHandlers.push({ element: wardrobeBtn, event: "click", handler });
+    }
 
     const clearButton = this.container.querySelector("#city-clear");
     if (clearButton) {
@@ -84,13 +158,33 @@ export class CityGame extends GameInterface {
       this.uiHandlers.push({ element: button, event: "click", handler });
     });
 
-    activateMode(this.scene?.mode || "place");
+    // Update coins display
+    this.updateCoinsDisplay();
+    if (window.AppBus) {
+      const coinsHandler = () => this.updateCoinsDisplay();
+      window.AppBus.on("economy:changed", coinsHandler);
+      this.uiHandlers.push({ element: window.AppBus, event: "economy:changed", handler: coinsHandler, custom: true });
+    }
+
+    // Default to walk mode
+    activateMode("walk");
+  }
+
+  updateCoinsDisplay() {
+    const coinsEl = this.container?.querySelector("#city-coins");
+    if (coinsEl && window.EconomyManager) {
+      coinsEl.textContent = window.EconomyManager.getCoins().toLocaleString();
+    }
   }
 
   unbindUI() {
     if (!this.uiHandlers.length) return;
-    this.uiHandlers.forEach(({ element, event, handler }) => {
-      element.removeEventListener(event, handler);
+    this.uiHandlers.forEach(({ element, event, handler, custom }) => {
+      if (custom && element?.off) {
+        element.off(event, handler);
+      } else if (element?.removeEventListener) {
+        element.removeEventListener(event, handler);
+      }
     });
     this.uiHandlers = [];
     this.uiBound = false;

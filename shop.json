@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 3,
   "currency": "coins",
   "categories": [
     {
@@ -14,15 +14,36 @@
       ]
     },
     {
-      "id": "city",
-      "label": "City",
-      "priceTiers": [500, 900, 1500, 2400],
+      "id": "nature",
+      "label": "Nature",
+      "priceTiers": [100, 200, 300, 500],
       "items": [
-        { "id": "city_house_small", "name": "Small House", "price": 500, "type": "building", "footprint": { "w": 2, "h": 2 }, "sprite": "assets/city/house.png" },
-        { "id": "city_bakery", "name": "Corner Bakery", "price": 900, "type": "building", "footprint": { "w": 3, "h": 2 }, "sprite": "assets/city/shop_small.png" },
-        { "id": "city_park_fountain", "name": "Fountain Plaza", "price": 1500, "type": "decor", "footprint": { "w": 3, "h": 3 }, "sprite": "assets/city/fountain.png" },
-        { "id": "city_townhall", "name": "Town Hall", "price": 2400, "type": "building", "footprint": { "w": 4, "h": 3 }, "sprite": "assets/city/building_large.png" },
-        { "id": "city_road_tile", "name": "Road Tile", "price": 500, "type": "ground", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/road.png", "groundType": "road" }
+        { "id": "city_tree", "name": "Tree", "price": 100, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/PNG/cityTiles_067.png" },
+        { "id": "city_tree_grass", "name": "Tree on Grass", "price": 150, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/PNG/cityTiles_075.png" },
+        { "id": "city_tree_park", "name": "Park Tree", "price": 150, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/PNG/cityTiles_083.png" },
+        { "id": "city_trees_double", "name": "Double Trees", "price": 250, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/PNG/cityTiles_036.png" }
+      ]
+    },
+    {
+      "id": "buildings",
+      "label": "Buildings",
+      "priceTiers": [300, 600, 1000, 2000],
+      "items": [
+        { "id": "city_house", "name": "House", "price": 300, "type": "building", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/house.png" },
+        { "id": "city_shop", "name": "Shop", "price": 500, "type": "building", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/shop_small.png" },
+        { "id": "city_building_small", "name": "Small Building", "price": 400, "type": "building", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/building_small.png" },
+        { "id": "city_building_medium", "name": "Medium Building", "price": 800, "type": "building", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/building_medium.png" },
+        { "id": "city_building_large", "name": "Large Building", "price": 1500, "type": "building", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/building_large.png" }
+      ]
+    },
+    {
+      "id": "decor",
+      "label": "Decorations",
+      "priceTiers": [50, 100, 200, 500],
+      "items": [
+        { "id": "city_bench", "name": "Park Bench", "price": 50, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/Details/cityDetails_008.png" },
+        { "id": "city_lamppost", "name": "Lamp Post", "price": 75, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/kenney_isometric-city/Details/cityDetails_000.png" },
+        { "id": "city_fountain", "name": "Fountain", "price": 500, "type": "decor", "footprint": { "w": 1, "h": 1 }, "sprite": "assets/city/fountain.png" }
       ]
     }
   ]

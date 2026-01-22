@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="src/games/2048/style.css">
     <link rel="stylesheet" href="src/games/match3/style.css">
+    <link rel="stylesheet" href="src/components/character-creator.css">
+    <link rel="stylesheet" href="src/components/play-menu.css">
+    <link rel="stylesheet" href="src/components/wardrobe.css">
     <meta name="theme-color" content="#F2F2F7">
     <link rel="icon" href="assets/levels/level-1/2048.jpg" sizes="192x192">
     <link rel="apple-touch-icon" href="assets/levels/level-1/2048.jpg">
@@ -59,18 +62,62 @@
         <main class="app-main">
             <!-- City View -->
             <section id="view-city" class="view hidden">
-                <div class="view-header">
-                    <h2>City</h2>
-                    <div class="city-tools">
-                        <button class="ui-button city-mode active" data-city-mode="place">Place</button>
-                        <button class="ui-button secondary city-mode" data-city-mode="erase">Erase</button>
-                        <button id="city-clear" class="ui-button secondary">Clear</button>
-                        <button id="city-regenerate" class="ui-button secondary">Regen</button>
+                <!-- Full-screen city canvas -->
+                <div id="city-root" class="city-root" aria-label="City grid"></div>
+                
+                <!-- Floating top bar -->
+                <div class="city-top-bar">
+                    <div class="city-coins-display">
+                        <span class="city-coin-icon">🪙</span>
+                        <span id="city-coins">0</span>
+                    </div>
+                    <button class="city-settings-btn" data-settings-trigger aria-label="Settings">⚙️</button>
+                </div>
+                
+                <!-- Floating bottom buttons -->
+                <div class="city-floating-actions">
+                    <div class="city-fab-group city-fab-left">
+                        <button id="city-edit-btn" class="city-fab city-fab-edit" type="button">
+                            <span class="city-fab-icon">🔨</span>
+                            <span class="city-fab-label">Edit</span>
+                        </button>
+                        <button id="city-shop-btn" class="city-fab city-fab-shop" type="button">
+                            <span class="city-fab-icon">🛒</span>
+                            <span class="city-fab-label">Shop</span>
+                        </button>
+                    </div>
+                    <div class="city-fab-group city-fab-right">
+                        <button id="city-wardrobe-btn" class="city-fab city-fab-wardrobe" type="button">
+                            <span class="city-fab-icon">👗</span>
+                            <span class="city-fab-label">Style</span>
+                        </button>
+                        <button id="city-play-btn" class="city-fab city-fab-play" type="button">
+                            <span class="city-fab-icon">🎮</span>
+                            <span class="city-fab-label">Play</span>
+                        </button>
                     </div>
                 </div>
-                <div id="city-root" class="city-root" aria-label="City grid"></div>
-                <div id="city-palette" class="city-palette"></div>
-                <p id="city-hint" class="glass-pill city-hint">Tap map to place.</p>
+                
+                <!-- Edit mode panel (hidden by default) -->
+                <div id="city-edit-panel" class="city-edit-panel hidden">
+                    <div class="city-edit-header">
+                        <h3>Edit City</h3>
+                        <button id="city-edit-close" class="city-edit-close" type="button">&times;</button>
+                    </div>
+                    <div class="city-edit-tools">
+                        <button class="ui-button city-mode active" data-city-mode="walk">Walk</button>
+                        <button class="ui-button city-mode" data-city-mode="place">Place</button>
+                        <button class="ui-button secondary city-mode" data-city-mode="erase">Erase</button>
+                    </div>
+                    <div id="city-palette" class="city-palette"></div>
+                    <div class="city-edit-actions">
+                        <button id="city-clear" class="ui-button secondary small">Clear All</button>
+                        <button id="city-regenerate" class="ui-button secondary small">Regenerate</button>
+                    </div>
+                </div>
+                
+                <!-- Hint toast -->
+                <p id="city-hint" class="glass-pill city-hint">Tap to walk around the city.</p>
             </section>
 
             <!-- 2048 Game View -->

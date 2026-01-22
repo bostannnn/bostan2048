@@ -67,3 +67,44 @@ Canonical spec: `SOURCE_OF_TRUTH.md`. This roadmap tracks delivery status agains
 - Shared layout spacing tokens applied across games for consistent vertical rhythm.
 - GitHub Pages setup: dev subpath deployment + manual prod deploy workflows.
 - Dev PWA icon badge (DEV) for the dev build.
+
+## Progress Report (2026-01-22)
+### Character System (NEW)
+- [x] `CharacterManager.js` - character configuration with skin tone, hair style, hair color persistence.
+- [x] `CharacterSprite.js` - PixiJS-based character rendering with idle/walk animations.
+- [x] `CharacterCreator.js` - First-launch character creation overlay with live preview.
+- [x] Character displays in city hub with tap-to-walk movement.
+- [x] Camera follows character smoothly.
+
+### City Hub Redesign (NEW)
+- [x] Removed bottom navbar entirely - city is now the main hub.
+- [x] Added floating action buttons: Play, Edit, Shop, Style (Wardrobe).
+- [x] Play button opens game selection menu (2048, Match-3, Nonograms coming soon).
+- [x] Shop button navigates to shop view.
+- [x] Style/Wardrobe button opens character customization overlay.
+- [x] Edit button opens slide-up panel for city editing.
+
+### Wardrobe System (NEW)
+- [x] `Wardrobe.js` - Character customization overlay with live preview.
+- [x] Skin tone, hair style, hair color selection.
+- [x] "Clothes" tab placeholder for purchased items.
+- [x] Changes sync to character sprite in real-time.
+
+### Navigation Flow (NEW)
+- [x] City → Play Menu → Game (2048/Match-3).
+- [x] Game header includes "← City" back button.
+- [x] All games now have consistent header layout with back navigation.
+
+### City Assets Update
+- [x] Analyzed Kenney Isometric City pack (128 tiles + 11 details).
+- [x] Discovered pack is primarily road/terrain kit, not buildings.
+- [x] Identified correct tree tiles: cityTiles_067, 075, 083, 036 (trees on grass).
+- [x] Using original custom buildings (house.png, building_*.png) for actual structures.
+- [x] Updated starter city to use correct assets.
+- [x] Updated shop.json with proper sprite paths.
+
+### Pending
+- [ ] Wire clothes to shop purchases and inventory.
+- [ ] Per-game theme system (Sakura 2048, Naruto Match-3).
+- [ ] Audio system integration.
+- [ ] Find/create actual building assets (Kenney pack lacks detailed buildings).

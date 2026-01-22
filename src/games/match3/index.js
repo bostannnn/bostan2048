@@ -129,6 +129,17 @@ export class Match3Game extends GameInterface {
   }
 
   setupUI() {
+    // Back to city button
+    const backBtn = this.container.querySelector("#back-to-city");
+    if (backBtn) {
+      backBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (window.showView) {
+          window.showView("city");
+        }
+      });
+    }
+
     const restartButton = this.container.querySelector("#match3-restart");
     const leaderboardButton = this.container.querySelector("#show-leaderboard");
 
@@ -674,9 +685,13 @@ export class Match3Game extends GameInterface {
     return `
       <div class="match3-container">
         <div class="match3-header glass-panel">
-          <div class="title-stack">
-            <h1>Match-3</h1>
-            <span id="match3-level-badge" class="glass-pill level-badge">Level 1</span>
+          <div class="header-top-row">
+            <button id="back-to-city" class="ui-button secondary small back-btn" aria-label="Back to City">← City</button>
+            <div class="title-stack">
+              <h1>Match-3</h1>
+              <span id="match3-level-badge" class="glass-pill level-badge">Level 1</span>
+            </div>
+            <button class="ui-button secondary small icon-only settings-inline" data-settings-trigger="true" aria-label="Settings" title="Settings">⚙️</button>
           </div>
           <div class="scores match3-scores">
             <div class="score-container glass-pill" data-label="Score">
@@ -695,7 +710,6 @@ export class Match3Game extends GameInterface {
               <span class="score-label">🏆 Best</span>
               <span id="match3-best" class="score-value">0</span>
             </div>
-            <button class="ui-button secondary small icon-only settings-inline" data-settings-trigger="true" aria-label="Settings" title="Settings">⚙️</button>
           </div>
           <div class="header-buttons">
             <button id="show-leaderboard" class="ui-button secondary small header-left" aria-label="Leaderboard">Scores</button>

@@ -2,6 +2,8 @@ import { Photo2048 } from './src/games/2048/index.js';
 import { Match3Game } from './src/games/match3/index.js';
 import { CityGame } from './src/games/city/index.js';
 import { LeaderboardManager } from './src/core/LeaderboardManager.js';
+import { characterManager } from './src/core/CharacterManager.js';
+import { showCharacterCreator } from './src/components/CharacterCreator.js';
 import * as PIXI from 'pixi.js';
 window.PIXI = PIXI;
 import '/core.js';
@@ -242,7 +244,11 @@ import '/core.js';
       .then((response) => response.json())
       .then((data) => {
         state.shopCatalog = data;
-        state.cityItems = (data.categories || []).find((category) => category.id === "city")?.items || [];
+        // Collect all city-related items from multiple categories
+        const cityCategories = ["nature", "roads", "buildings", "decor", "city"];
+        state.cityItems = (data.categories || [])
+          .filter((category) => cityCategories.includes(category.id))
+          .flatMap((category) => category.items || []);
         renderShop(data);
         return data;
       })
@@ -681,6 +687,7 @@ import '/core.js';
     });
 
     openLevelSelectRef = open;
+    window.openLevelSelectRef = open; // Expose for city game
     return open;
   }
 
@@ -778,8 +785,20 @@ import '/core.js';
 
     bindEconomyEvents();
     
-    // Auto-launch 2048 if active view is 2048 (default)
-    const startView = document.querySelector(".nav-button.active")?.dataset.view || "2048";
-    showView(startView);
+    // Expose showView globally for other modules
+    window.showView = showView;
+    
+    // Check if character needs to be created (first launch)
+    async function initializeApp() {
+      // Show character creator if first time user
+      if (!characterManager.hasCharacter()) {
+        await showCharacterCreator({ container: document.body });
+      }
+      
+      // Always start with city view (it's the hub)
+      showView("city");
+    }
+    
+    initializeApp();
   });
 })();

@@ -1,0 +1,287 @@
+/**
+ * Character Creator Styles
+ * Japanese anime-inspired aesthetic
+ */
+
+.character-creator-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.character-creator-overlay.visible {
+  opacity: 1;
+}
+
+.character-creator {
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #2a1f4e 0%, #1a1333 50%, #2a1f4e 100%);
+  border-radius: 24px;
+  border: 3px solid #c9a0dc;
+  box-shadow: 
+    0 0 40px rgba(201, 160, 220, 0.3),
+    0 20px 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.character-creator-overlay.visible .character-creator {
+  transform: scale(1) translateY(0);
+}
+
+/* Header */
+.cc-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 20px;
+  border-bottom: 2px solid rgba(201, 160, 220, 0.3);
+  background: linear-gradient(180deg, rgba(255, 182, 193, 0.2) 0%, transparent 100%);
+}
+
+.cc-header h2 {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFB6C1;
+  text-shadow: 0 2px 10px rgba(255, 182, 193, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.cc-close {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cc-close:hover {
+  background: rgba(255, 107, 157, 0.4);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Content */
+.cc-content {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+}
+
+@media (min-width: 500px) {
+  .cc-content {
+    flex-direction: row;
+  }
+}
+
+/* Preview */
+.cc-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 200px;
+}
+
+.cc-preview-canvas {
+  border-radius: 16px;
+  background: linear-gradient(180deg, #87CEEB 0%, #98FB98 50%, #90EE90 100%);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    inset 0 0 30px rgba(255, 255, 255, 0.2),
+    0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Options */
+.cc-options {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cc-label {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a0dc;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Name input */
+.cc-name-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid rgba(201, 160, 220, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.cc-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.cc-name-input:focus {
+  border-color: #FFB6C1;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 15px rgba(255, 182, 193, 0.3);
+}
+
+/* Color row */
+.cc-color-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cc-color-btn {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cc-color-btn:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.cc-color-btn.active {
+  border-color: #FFB6C1;
+  box-shadow: 
+    0 0 15px rgba(255, 182, 193, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: scale(1.1);
+}
+
+/* Style row */
+.cc-style-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cc-style-btn {
+  padding: 8px 16px;
+  border: 2px solid rgba(201, 160, 220, 0.4);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cc-style-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(201, 160, 220, 0.6);
+}
+
+.cc-style-btn.active {
+  background: linear-gradient(135deg, #FF6B9D 0%, #c9a0dc 100%);
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+}
+
+/* Footer */
+.cc-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 20px;
+  border-top: 2px solid rgba(201, 160, 220, 0.3);
+  background: linear-gradient(0deg, rgba(255, 182, 193, 0.1) 0%, transparent 100%);
+}
+
+.cc-btn {
+  padding: 14px 32px;
+  border: none;
+  border-radius: 25px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cc-btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.cc-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cc-btn-confirm {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8E53 100%);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(255, 107, 157, 0.4);
+}
+
+.cc-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255, 107, 157, 0.5);
+}
+
+.cc-btn-confirm:active {
+  transform: translateY(0);
+}
+
+/* Sakura decorations (optional - can be added via pseudo-elements) */
+.character-creator::before,
+.character-creator::after {
+  content: "🌸";
+  position: absolute;
+  font-size: 1.5rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.character-creator::before {
+  top: 60px;
+  left: 20px;
+}
+
+.character-creator::after {
+  bottom: 60px;
+  right: 20px;
+}
