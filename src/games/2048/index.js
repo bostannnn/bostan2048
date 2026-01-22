@@ -309,6 +309,27 @@ export class Photo2048 extends GameInterface {
     }
 
     setupUI() {
+        // Secret dev mode: tap title 5 times
+        const title = this.container.querySelector("h1");
+        if (title) {
+            let tapCount = 0;
+            let lastTap = 0;
+            title.addEventListener("click", () => {
+                const now = Date.now();
+                if (now - lastTap > 2000) tapCount = 0; // Reset after 2 seconds
+                lastTap = now;
+                tapCount++;
+                if (tapCount >= 5) {
+                    tapCount = 0;
+                    if (window.enableDevMode) {
+                        window.enableDevMode();
+                        alert("Dev mode enabled! Refreshing...");
+                        location.reload();
+                    }
+                }
+            });
+        }
+
         const showButton = this.container.querySelector("#show-leaderboard");
 
         if (showButton) {
